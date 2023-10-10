@@ -12,11 +12,55 @@ final List<String> filenames = <String>[
 final List<String> foldernames = <String>[
   'Meeting notes',
   'Email drafts',
-  'Ideas'
+  'Ideas',
 ];
 
-class FilesPage extends StatelessWidget {
+class FilesPage extends StatefulWidget {
   const FilesPage({super.key});
+
+  @override
+  State<FilesPage> createState() => _FilesPageState();
+}
+
+class _FilesPageState extends State<FilesPage> {
+  void _showCreateFolderDialog(BuildContext context) {
+    String newFolderName = '';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Create a New Folder'),
+          content: TextField(
+            onChanged: (value) {
+              newFolderName = value;
+            },
+            decoration: const InputDecoration(labelText: 'Folder Name'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog on cancel
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (newFolderName.isNotEmpty) {
+                  setState(() {
+                    foldernames
+                        .add(newFolderName); // Add the folder name to the list
+                  });
+                }
+                Navigator.of(context).pop(); // Close the dialog on save
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +119,13 @@ class FilesPage extends StatelessWidget {
               },
             ),
           ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _showCreateFolderDialog(
+                context); // Open the dialog to create a folder
+          },
+          child: const Icon(Icons.add),
         ),
       ),
     );
