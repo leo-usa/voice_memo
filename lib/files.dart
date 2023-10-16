@@ -16,14 +16,16 @@ final List<String> foldernames = <String>[
 ];
 
 class FilesPage extends StatefulWidget {
-  const FilesPage({super.key});
+  const FilesPage({Key? key}) : super(key: key);
 
   @override
   State<FilesPage> createState() => _FilesPageState();
 }
 
 class _FilesPageState extends State<FilesPage> {
-  bool isFoldersTabSelected = false; // Added this variable
+  bool isFoldersTabSelected = false;
+  String selectedFolder = '';
+  List<String> selectedFolderContent = [];
 
   void _showCreateFolderDialog(BuildContext context) {
     String newFolderName = '';
@@ -42,7 +44,7 @@ class _FilesPageState extends State<FilesPage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog on cancel
+                Navigator.of(context).pop();
               },
               child: const Text('Cancel'),
             ),
@@ -50,17 +52,34 @@ class _FilesPageState extends State<FilesPage> {
               onPressed: () {
                 if (newFolderName.isNotEmpty) {
                   setState(() {
-                    foldernames
-                        .add(newFolderName); // Add the folder name to the list
+                    foldernames.add(newFolderName);
                   });
                 }
-                Navigator.of(context).pop(); // Close the dialog on save
+                Navigator.of(context).pop();
               },
               child: const Text('Save'),
             ),
           ],
         );
       },
+    );
+  }
+
+  void _openFolder(String folderName) {
+    setState(() {
+      selectedFolder = folderName;
+      isFoldersTabSelected = true;
+      selectedFolderContent = getFolderContent(folderName);
+    });
+
+    // Avaa kansion sisällön uudessa näkymässä
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FolderViewPage(
+          folderName: folderName,
+          folderContent: selectedFolderContent,
+        ),
+      ),
     );
   }
 
@@ -109,6 +128,7 @@ class _FilesPageState extends State<FilesPage> {
                 );
               },
             ),
+            // Folders Tab
             ListView.builder(
               padding: const EdgeInsets.all(8),
               itemCount: foldernames.length,
@@ -120,6 +140,9 @@ class _FilesPageState extends State<FilesPage> {
                       title: Text(folderName),
                       leading: const Icon(Icons.folder_outlined),
                       trailing: const Icon(Icons.arrow_forward),
+                      onTap: () {
+                        _openFolder(folderName);
+                      },
                     ),
                     const Divider(),
                   ],
@@ -131,14 +154,47 @@ class _FilesPageState extends State<FilesPage> {
         floatingActionButton: isFoldersTabSelected
             ? FloatingActionButton(
                 onPressed: () {
-                  _showCreateFolderDialog(
-                      context); // Open the dialog to create a folder
+                  _showCreateFolderDialog(context);
                 },
-                shape: const CircleBorder(), // Aseta ympyrän muotoinen kuvio
+                shape: const CircleBorder(),
                 child: const Icon(Icons.add),
               )
             : null,
       ),
     );
+  }
+
+  List<String> getFolderContent(String folderName) {
+    // Tässä voit hakea kansion sisällön jostain lähteestä
+    // Palauta luettelo tiedostoista tai muusta sisällöstä
+    // Tässä vaiheessa voit palauttaa yksinkertaisesti tyhjän luettelon
+    return [];
+  }
+}
+
+class FolderViewPage extends StatelessWidget {
+  final String folderName;
+  final List<String> folderContent;
+
+  FolderViewPage({
+    required this.folderName,
+    required this.folderContent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text(folderName),
+        ),
+        body: ListView.builder(
+          itemCount: folderContent.length,
+          itemBuilder: (BuildContext context, int index) {
+            String content = folderContent[index];
+            return ListTile(
+              title: Text(content),
+            );
+          },
+        ));
   }
 }
