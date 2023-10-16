@@ -23,6 +23,8 @@ class FilesPage extends StatefulWidget {
 }
 
 class _FilesPageState extends State<FilesPage> {
+  bool isFoldersTabSelected = false; // Added this variable
+
   void _showCreateFolderDialog(BuildContext context) {
     String newFolderName = '';
 
@@ -70,7 +72,7 @@ class _FilesPageState extends State<FilesPage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Files'),
-          bottom: const TabBar(
+          bottom: TabBar(
             indicatorSize: TabBarIndicatorSize.tab,
             tabs: [
               Tab(
@@ -80,6 +82,11 @@ class _FilesPageState extends State<FilesPage> {
                 text: 'Folders',
               ),
             ],
+            onTap: (index) {
+              setState(() {
+                isFoldersTabSelected = index == 1;
+              });
+            },
           ),
         ),
         body: TabBarView(
@@ -92,6 +99,7 @@ class _FilesPageState extends State<FilesPage> {
                 return Column(
                   children: [
                     ListTile(
+                      leading: const Icon(Icons.description_outlined),
                       title: Text(fileName),
                       subtitle: const Text('1.10.2023'),
                       trailing: const Icon(Icons.arrow_forward),
@@ -120,13 +128,16 @@ class _FilesPageState extends State<FilesPage> {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            _showCreateFolderDialog(
-                context); // Open the dialog to create a folder
-          },
-          child: const Icon(Icons.add),
-        ),
+        floatingActionButton: isFoldersTabSelected
+            ? FloatingActionButton(
+                onPressed: () {
+                  _showCreateFolderDialog(
+                      context); // Open the dialog to create a folder
+                },
+                shape: const CircleBorder(), // Aseta ympyrän muotoinen kuvio
+                child: const Icon(Icons.add),
+              )
+            : null,
       ),
     );
   }
