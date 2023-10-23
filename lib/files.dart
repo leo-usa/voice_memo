@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
+import 'openedFilePage.dart'; // Tuo OpenedFilePage
 
-final List<String> filenames = <String>[
-  'Memo 1',
-  'Memo 2',
-  'Memo 3',
-  'Memo 4',
-  'Memo 5',
-  'Memo 6',
-  'Memo 7',
+class FileItem {
+  final String name;
+  final String date;
+  final String folderName;
+
+  FileItem({
+    required this.name,
+    required this.date,
+    required this.folderName,
+  });
+}
+
+final List<FileItem> filenames = <FileItem>[
+  FileItem(name: 'Memo 1', date: '23.10.2023', folderName: 'Meeting notes'),
+  FileItem(name: 'Memo 2', date: '15.10.2023', folderName: 'Meeting notes'),
+  FileItem(name: 'Memo 3', date: '4.10.2023', folderName: 'Email drafts'),
+  FileItem(name: 'Memo 4', date: '4.10.2023', folderName: 'Ideas'),
+  FileItem(name: 'Memo 5', date: '1.10.2023', folderName: 'Ideas'),
+  FileItem(name: 'Memo 6', date: '27.9.2023', folderName: 'Ideas'),
+  FileItem(name: 'Memo 7', date: '25.9.2023', folderName: 'Meeting notes'),
 ];
+
 final List<String> foldernames = <String>[
   'Meeting notes',
   'Email drafts',
@@ -65,6 +79,15 @@ class _FilesPageState extends State<FilesPage> {
     );
   }
 
+  void _openFile(FileItem fileItem) {
+    // Avaa tiedosto valitussa näkymässä
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => OpenedFilePage(title: fileItem.name),
+      ),
+    );
+  }
+
   void _openFolder(String folderName) {
     setState(() {
       selectedFolder = folderName;
@@ -114,14 +137,17 @@ class _FilesPageState extends State<FilesPage> {
               padding: const EdgeInsets.all(8),
               itemCount: filenames.length,
               itemBuilder: (BuildContext context, int index) {
-                String fileName = filenames[index];
+                FileItem fileItem = filenames[index];
                 return Column(
                   children: [
                     ListTile(
                       leading: const Icon(Icons.description_outlined),
-                      title: Text(fileName),
-                      subtitle: const Text('1.10.2023'),
+                      title: Text(fileItem.name),
+                      subtitle: Text(fileItem.date),
                       trailing: const Icon(Icons.arrow_forward),
+                      onTap: () {
+                        _openFile(fileItem);
+                      },
                     ),
                     const Divider(),
                   ],
