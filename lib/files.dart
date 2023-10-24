@@ -23,7 +23,7 @@ class FileItem {
 
 final List<FileItem> filenames = <FileItem>[
   FileItem(
-    name: 'Memo 1',
+    name: 'Sales Presentation Meeting',
     date: '23.10.2023',
     folderName: 'Meeting notes',
     // originalText: 'Original text for',
@@ -32,7 +32,7 @@ final List<FileItem> filenames = <FileItem>[
     // audio: 'Audio for'
   ),
   FileItem(
-    name: 'Memo 2',
+    name: 'Project Kickoff',
     date: '15.10.2023',
     folderName: 'Meeting notes',
     // originalText: 'Original text for',
@@ -41,7 +41,7 @@ final List<FileItem> filenames = <FileItem>[
     // audio: 'Audio for'
   ),
   FileItem(
-    name: 'Memo 3',
+    name: 'Weekly Newsletter',
     date: '4.10.2023',
     folderName: 'Email drafts',
     // originalText: 'Original text for',
@@ -50,7 +50,7 @@ final List<FileItem> filenames = <FileItem>[
     // audio: 'Audio for'
   ),
   FileItem(
-    name: 'Memo 4',
+    name: 'Design Inspiration',
     date: '4.10.2023',
     folderName: 'Ideas',
     // originalText: 'Original text for',
@@ -59,7 +59,7 @@ final List<FileItem> filenames = <FileItem>[
     // audio: 'Audio for'
   ),
   FileItem(
-    name: 'Memo 5',
+    name: 'Creative Marketing Strategies',
     date: '1.10.2023',
     folderName: 'Ideas',
     // originalText: 'Original text for',
@@ -68,7 +68,7 @@ final List<FileItem> filenames = <FileItem>[
     // audio: 'Audio for'
   ),
   FileItem(
-    name: 'Memo 6',
+    name: 'New Product Ideas',
     date: '27.9.2023',
     folderName: 'Ideas',
     // originalText: 'Original text for',
@@ -77,7 +77,7 @@ final List<FileItem> filenames = <FileItem>[
     // audio: 'Audio for'
   ),
   FileItem(
-    name: 'Memo 7',
+    name: 'Client Meeting Notes',
     date: '25.9.2023',
     folderName: 'Meeting notes',
     // originalText: 'Original text for',
