@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'openedFilePage.dart'; // Tuo OpenedFilePage
+import 'opened_file_page.dart'; // Tuo OpenedFilePage
 
 class FileItem {
   final String name;
@@ -39,7 +39,7 @@ class FilesPage extends StatefulWidget {
 class _FilesPageState extends State<FilesPage> {
   bool isFoldersTabSelected = false;
   String selectedFolder = '';
-  List<String> selectedFolderContent = [];
+  List<FileItem> selectedFolderContent = [];
 
   void _showCreateFolderDialog(BuildContext context) {
     String newFolderName = '';
@@ -190,37 +190,98 @@ class _FilesPageState extends State<FilesPage> {
     );
   }
 
-  List<String> getFolderContent(String folderName) {
+  List<FileItem> getFolderContent(String folderName) {
     // Tässä voit hakea kansion sisällön jostain lähteestä
     // Palauta luettelo tiedostoista tai muusta sisällöstä
-    // Tässä vaiheessa voit palauttaa yksinkertaisesti tyhjän luettelon
-    return [];
+    return filenames.where((file) => file.folderName == folderName).toList();
   }
 }
 
 class FolderViewPage extends StatelessWidget {
   final String folderName;
-  final List<String> folderContent;
+  final List<FileItem> folderContent;
 
   FolderViewPage({
     required this.folderName,
     required this.folderContent,
   });
 
+  void _openFile(BuildContext context, FileItem fileItem) {
+    // Avaa tiedosto valitussa näkymässä
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => OpenedFilePage(title: fileItem.name),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(folderName),
-        ),
-        body: ListView.builder(
-          itemCount: folderContent.length,
-          itemBuilder: (BuildContext context, int index) {
-            String content = folderContent[index];
-            return ListTile(
-              title: Text(content),
-            );
-          },
-        ));
+      appBar: AppBar(
+        title: Text(folderName),
+        actions: [
+          PopupMenuButton(
+            onSelected: (value) {
+              if (value == 'renameFolder') {
+                // Tässä voit toteuttaa kansion nimen muokkaamisen
+              } else if (value == 'deleteFolder') {
+                // Tässä voit toteuttaa kansion poistamisen
+              }
+            },
+            icon: const Icon(Icons.more_vert),
+            offset: const Offset(0, kToolbarHeight),
+            itemBuilder: (context) {
+              return [
+                const PopupMenuItem(
+                  value: 'renameFolder',
+                  child: Row(
+                    children: <Widget>[
+                      Icon(Icons.edit),
+                      SizedBox(
+                        width: 8.0,
+                      ),
+                      Text('Rename folder'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'deleteFolder',
+                  child: Row(
+                    children: <Widget>[
+                      Icon(Icons.delete),
+                      SizedBox(
+                        width: 8.0,
+                      ),
+                      Text('Delete folder'),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
+        ],
+      ),
+      body: ListView.builder(
+        itemCount: folderContent.length,
+        itemBuilder: (BuildContext context, int index) {
+          FileItem content = folderContent[index];
+          return Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.description_outlined),
+                title: Text(content.name),
+                subtitle: Text(content.date),
+                trailing: const Icon(Icons.arrow_forward),
+                onTap: () {
+                  _openFile(context, content);
+                },
+              ),
+              const Divider(),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
