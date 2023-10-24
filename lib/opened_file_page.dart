@@ -104,7 +104,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
           bottom: TabBar(
             controller: _tabController,
             indicatorSize: TabBarIndicatorSize.tab,
-            tabs: [
+            tabs: const [
               Tab(text: 'Original'),
               Tab(text: 'Cleaned'),
               Tab(text: 'Summary'),
@@ -122,6 +122,13 @@ class _OpenedFilePageState extends State<OpenedFilePage>
           Center(child: Text('Summary content for ${widget.title}')),
           Center(child: Text('Audio content for ${widget.title}')),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Tiedoston muokkausnäkymän toiminnallisuuteen siirtyminen
+        },
+        shape: const CircleBorder(),
+        child: const Icon(Icons.edit),
       ),
     );
   }

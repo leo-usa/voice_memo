@@ -209,7 +209,7 @@ class _FilesPageState extends State<FilesPage> {
           title: const Text('Files'),
           bottom: TabBar(
             indicatorSize: TabBarIndicatorSize.tab,
-            tabs: [
+            tabs: const [
               Tab(
                 text: 'All',
               ),
@@ -223,7 +223,7 @@ class _FilesPageState extends State<FilesPage> {
               });
             },
           ),
-          toolbarHeight: 60.0, // Aseta AppBarin korkeus tähän
+          toolbarHeight: 60.0, // AppBarin korkeus
         ),
         body: TabBarView(
           children: [
