@@ -293,70 +293,77 @@ class FolderViewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(folderName),
-          actions: [
-            PopupMenuButton(
-              onSelected: (value) {
-                if (value == 'renameFolder') {
-                  // Tässä voit toteuttaa kansion nimen muokkaamisen
-                } else if (value == 'deleteFolder') {
-                  // Tässä voit toteuttaa kansion poistamisen
-                }
-              },
-              icon: const Icon(Icons.more_vert),
-              offset: const Offset(0, kToolbarHeight),
-              itemBuilder: (context) {
-                return [
-                  const PopupMenuItem(
-                    value: 'renameFolder',
-                    child: Row(
-                      children: <Widget>[
-                        Icon(Icons.edit),
-                        SizedBox(
-                          width: 8.0,
-                        ),
-                        Text('Rename folder'),
-                      ],
-                    ),
+      appBar: AppBar(
+        title: Text(folderName),
+        actions: [
+          PopupMenuButton(
+            onSelected: (value) {
+              if (value == 'renameFolder') {
+                // Tässä voit toteuttaa kansion nimen muokkaamisen
+              } else if (value == 'deleteFolder') {
+                // Tässä voit toteuttaa kansion poistamisen
+              }
+            },
+            icon: const Icon(Icons.more_vert),
+            offset: const Offset(0, kToolbarHeight),
+            itemBuilder: (context) {
+              return [
+                const PopupMenuItem(
+                  value: 'renameFolder',
+                  child: Row(
+                    children: <Widget>[
+                      Icon(Icons.edit),
+                      SizedBox(
+                        width: 8.0,
+                      ),
+                      Text('Rename folder'),
+                    ],
                   ),
-                  const PopupMenuItem(
-                    value: 'deleteFolder',
-                    child: Row(
-                      children: <Widget>[
-                        Icon(Icons.delete_outlined),
-                        SizedBox(
-                          width: 8.0,
-                        ),
-                        Text('Delete folder'),
-                      ],
-                    ),
+                ),
+                const PopupMenuItem(
+                  value: 'deleteFolder',
+                  child: Row(
+                    children: <Widget>[
+                      Icon(Icons.delete_outlined),
+                      SizedBox(
+                        width: 8.0,
+                      ),
+                      Text('Delete folder'),
+                    ],
                   ),
-                ];
-              },
-            ),
-          ],
-          toolbarHeight: 60.0, // AppBarin korkeus tähän
-        ),
-        body: folderContent.isEmpty
-            ? const Center(
-                child: Text('Folder is empty'),
-              )
-            : ListView.builder(
-                itemCount: folderContent.length,
-                itemBuilder: (BuildContext context, int index) {
-                  FileItem fileItem = folderContent[index];
-                  bool isFileInFolder = fileItem.folderName ==
-                      folderName; // Check if the file belongs to opened folder
-                  return FileListTile(
-                    fileItem: fileItem,
-                    onTap: () {
-                      if (isFileInFolder) {
-                        FileUtils.openFile(context, fileItem);
-                      }
+                ),
+              ];
+            },
+          ),
+        ],
+        toolbarHeight: 60.0, // AppBarin korkeus tähän
+      ),
+      body: Column(
+        children: [
+          const Divider(),
+          Expanded(
+            child: folderContent.isEmpty
+                ? const Center(
+                    child: Text('Folder is empty'),
+                  )
+                : ListView.builder(
+                    itemCount: folderContent.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      FileItem fileItem = folderContent[index];
+                      bool isFileInFolder = fileItem.folderName == folderName;
+                      return FileListTile(
+                        fileItem: fileItem,
+                        onTap: () {
+                          if (isFileInFolder) {
+                            FileUtils.openFile(context, fileItem);
+                          }
+                        },
+                      );
                     },
-                  );
-                },
-              ));
+                  ),
+          ),
+        ],
+      ),
+    );
   }
 }
