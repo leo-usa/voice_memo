@@ -90,7 +90,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                     value: 'delete',
                     child: Row(
                       children: <Widget>[
-                        Icon(Icons.delete),
+                        Icon(Icons.delete_outlined),
                         SizedBox(
                             width: 8.0), // Pieni väli ikonin ja tekstin välillä
                         Text('Delete file'),

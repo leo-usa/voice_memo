@@ -5,22 +5,86 @@ class FileItem {
   final String name;
   final String date;
   final String folderName;
+  // final String originalText;
+  // final String cleanedText;
+  // final String summaryText;
+  // final String audio;
 
   FileItem({
     required this.name,
     required this.date,
     required this.folderName,
+    // required this.originalText,
+    // required this.cleanedText,
+    // required this.summaryText,
+    // required this.audio,
   });
 }
 
 final List<FileItem> filenames = <FileItem>[
-  FileItem(name: 'Memo 1', date: '23.10.2023', folderName: 'Meeting notes'),
-  FileItem(name: 'Memo 2', date: '15.10.2023', folderName: 'Meeting notes'),
-  FileItem(name: 'Memo 3', date: '4.10.2023', folderName: 'Email drafts'),
-  FileItem(name: 'Memo 4', date: '4.10.2023', folderName: 'Ideas'),
-  FileItem(name: 'Memo 5', date: '1.10.2023', folderName: 'Ideas'),
-  FileItem(name: 'Memo 6', date: '27.9.2023', folderName: 'Ideas'),
-  FileItem(name: 'Memo 7', date: '25.9.2023', folderName: 'Meeting notes'),
+  FileItem(
+    name: 'Memo 1',
+    date: '23.10.2023',
+    folderName: 'Meeting notes',
+    // originalText: 'Original text for',
+    // cleanedText: 'Cleaned text for',
+    // summaryText: 'Summary text for',
+    // audio: 'Audio for'
+  ),
+  FileItem(
+    name: 'Memo 2',
+    date: '15.10.2023',
+    folderName: 'Meeting notes',
+    // originalText: 'Original text for',
+    // cleanedText: 'Cleaned text for',
+    // summaryText: 'Summary text for',
+    // audio: 'Audio for'
+  ),
+  FileItem(
+    name: 'Memo 3',
+    date: '4.10.2023',
+    folderName: 'Email drafts',
+    // originalText: 'Original text for',
+    // cleanedText: 'Cleaned text for',
+    // summaryText: 'Summary text for',
+    // audio: 'Audio for'
+  ),
+  FileItem(
+    name: 'Memo 4',
+    date: '4.10.2023',
+    folderName: 'Ideas',
+    // originalText: 'Original text for',
+    // cleanedText: 'Cleaned text for',
+    // summaryText: 'Summary text for',
+    // audio: 'Audio for'
+  ),
+  FileItem(
+    name: 'Memo 5',
+    date: '1.10.2023',
+    folderName: 'Ideas',
+    // originalText: 'Original text for',
+    // cleanedText: 'Cleaned text for',
+    // summaryText: 'Summary text for',
+    // audio: 'Audio for'
+  ),
+  FileItem(
+    name: 'Memo 6',
+    date: '27.9.2023',
+    folderName: 'Ideas',
+    // originalText: 'Original text for',
+    // cleanedText: 'Cleaned text for',
+    // summaryText: 'Summary text for',
+    // audio: 'Audio for'
+  ),
+  FileItem(
+    name: 'Memo 7',
+    date: '25.9.2023',
+    folderName: 'Meeting notes',
+    // originalText: 'Original text for',
+    // cleanedText: 'Cleaned text for',
+    // summaryText: 'Summary text for',
+    // audio: 'Audio for'
+  ),
 ];
 
 final List<String> foldernames = <String>[
@@ -34,6 +98,44 @@ class FilesPage extends StatefulWidget {
 
   @override
   State<FilesPage> createState() => _FilesPageState();
+}
+
+class FileUtils {
+  static void openFile(BuildContext context, FileItem fileItem) {
+    // Avaa tiedosto valitussa näkymässä
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => OpenedFilePage(title: fileItem.name),
+      ),
+    );
+  }
+}
+
+class FileListTile extends StatelessWidget {
+  final FileItem fileItem;
+  final void Function() onTap;
+
+  const FileListTile({
+    Key? key,
+    required this.fileItem,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.description_outlined),
+          title: Text(fileItem.name),
+          subtitle: Text(fileItem.date),
+          trailing: const Icon(Icons.arrow_forward),
+          onTap: onTap,
+        ),
+        const Divider(),
+      ],
+    );
+  }
 }
 
 class _FilesPageState extends State<FilesPage> {
@@ -79,15 +181,6 @@ class _FilesPageState extends State<FilesPage> {
     );
   }
 
-  void _openFile(FileItem fileItem) {
-    // Avaa tiedosto valitussa näkymässä
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => OpenedFilePage(title: fileItem.name),
-      ),
-    );
-  }
-
   void _openFolder(String folderName) {
     setState(() {
       selectedFolder = folderName;
@@ -130,27 +223,19 @@ class _FilesPageState extends State<FilesPage> {
               });
             },
           ),
+          toolbarHeight: 60.0, // Aseta AppBarin korkeus tähän
         ),
         body: TabBarView(
           children: [
             ListView.builder(
-              padding: const EdgeInsets.all(8),
               itemCount: filenames.length,
               itemBuilder: (BuildContext context, int index) {
                 FileItem fileItem = filenames[index];
-                return Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.description_outlined),
-                      title: Text(fileItem.name),
-                      subtitle: Text(fileItem.date),
-                      trailing: const Icon(Icons.arrow_forward),
-                      onTap: () {
-                        _openFile(fileItem);
-                      },
-                    ),
-                    const Divider(),
-                  ],
+                return FileListTile(
+                  fileItem: fileItem,
+                  onTap: () {
+                    FileUtils.openFile(context, fileItem);
+                  },
                 );
               },
             ),
@@ -191,8 +276,7 @@ class _FilesPageState extends State<FilesPage> {
   }
 
   List<FileItem> getFolderContent(String folderName) {
-    // Tässä voit hakea kansion sisällön jostain lähteestä
-    // Palauta luettelo tiedostoista tai muusta sisällöstä
+    // Palauta luettelo tiedostoista
     return filenames.where((file) => file.folderName == folderName).toList();
   }
 }
@@ -206,82 +290,73 @@ class FolderViewPage extends StatelessWidget {
     required this.folderContent,
   });
 
-  void _openFile(BuildContext context, FileItem fileItem) {
-    // Avaa tiedosto valitussa näkymässä
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => OpenedFilePage(title: fileItem.name),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(folderName),
-        actions: [
-          PopupMenuButton(
-            onSelected: (value) {
-              if (value == 'renameFolder') {
-                // Tässä voit toteuttaa kansion nimen muokkaamisen
-              } else if (value == 'deleteFolder') {
-                // Tässä voit toteuttaa kansion poistamisen
-              }
-            },
-            icon: const Icon(Icons.more_vert),
-            offset: const Offset(0, kToolbarHeight),
-            itemBuilder: (context) {
-              return [
-                const PopupMenuItem(
-                  value: 'renameFolder',
-                  child: Row(
-                    children: <Widget>[
-                      Icon(Icons.edit),
-                      SizedBox(
-                        width: 8.0,
-                      ),
-                      Text('Rename folder'),
-                    ],
+        appBar: AppBar(
+          title: Text(folderName),
+          actions: [
+            PopupMenuButton(
+              onSelected: (value) {
+                if (value == 'renameFolder') {
+                  // Tässä voit toteuttaa kansion nimen muokkaamisen
+                } else if (value == 'deleteFolder') {
+                  // Tässä voit toteuttaa kansion poistamisen
+                }
+              },
+              icon: const Icon(Icons.more_vert),
+              offset: const Offset(0, kToolbarHeight),
+              itemBuilder: (context) {
+                return [
+                  const PopupMenuItem(
+                    value: 'renameFolder',
+                    child: Row(
+                      children: <Widget>[
+                        Icon(Icons.edit),
+                        SizedBox(
+                          width: 8.0,
+                        ),
+                        Text('Rename folder'),
+                      ],
+                    ),
                   ),
-                ),
-                const PopupMenuItem(
-                  value: 'deleteFolder',
-                  child: Row(
-                    children: <Widget>[
-                      Icon(Icons.delete),
-                      SizedBox(
-                        width: 8.0,
-                      ),
-                      Text('Delete folder'),
-                    ],
+                  const PopupMenuItem(
+                    value: 'deleteFolder',
+                    child: Row(
+                      children: <Widget>[
+                        Icon(Icons.delete_outlined),
+                        SizedBox(
+                          width: 8.0,
+                        ),
+                        Text('Delete folder'),
+                      ],
+                    ),
                   ),
-                ),
-              ];
-            },
-          ),
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: folderContent.length,
-        itemBuilder: (BuildContext context, int index) {
-          FileItem content = folderContent[index];
-          return Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.description_outlined),
-                title: Text(content.name),
-                subtitle: Text(content.date),
-                trailing: const Icon(Icons.arrow_forward),
-                onTap: () {
-                  _openFile(context, content);
+                ];
+              },
+            ),
+          ],
+          toolbarHeight: 60.0, // AppBarin korkeus tähän
+        ),
+        body: folderContent.isEmpty
+            ? const Center(
+                child: Text('Folder is empty'),
+              )
+            : ListView.builder(
+                itemCount: folderContent.length,
+                itemBuilder: (BuildContext context, int index) {
+                  FileItem fileItem = folderContent[index];
+                  bool isFileInFolder = fileItem.folderName ==
+                      folderName; // Check if the file belongs to opened folder
+                  return FileListTile(
+                    fileItem: fileItem,
+                    onTap: () {
+                      if (isFileInFolder) {
+                        FileUtils.openFile(context, fileItem);
+                      }
+                    },
+                  );
                 },
-              ),
-              const Divider(),
-            ],
-          );
-        },
-      ),
-    );
+              ));
   }
 }

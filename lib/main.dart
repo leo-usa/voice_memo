@@ -46,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
               title:
                   Text(widget.title), // Aseta otsikko vain RecordPage-näkymälle
             )
-          : null, // Muissa näkymissä ei ole otsikkoa
+          : null, // Muissa näkymissä ei ole Voice Memo -otsikkoa
 
       bottomNavigationBar: NavigationBar(
         animationDuration: const Duration(milliseconds: 1000),
