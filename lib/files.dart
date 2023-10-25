@@ -164,6 +164,86 @@ class MySearchDelegate extends SearchDelegate<String> {
   }
 }
 
+//Search inside a folder, only searches from the files that are inside a folder
+class FolderSearchDelegate extends SearchDelegate<String> {
+  final List<FileItem> folderContent;
+  final String folderName;
+
+  FolderSearchDelegate(this.folderContent, this.folderName);
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return <Widget>[
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, "");
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    // Show results from the files that are inside a folder
+    final List<FileItem> results = _performSearch(query);
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (BuildContext context, int index) {
+        FileItem fileItem = results[index];
+        return ListTile(
+          title: Text(fileItem.name),
+          subtitle: Text(fileItem.date),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final suggestionList = query.isEmpty
+        ? [] // if search is empty, show empty list
+        : folderContent
+            .where(
+                (file) => file.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+
+    return ListView.builder(
+      itemCount: suggestionList.length,
+      itemBuilder: (BuildContext context, int index) {
+        FileItem fileItem = suggestionList[index];
+        return ListTile(
+          title: Text(fileItem.name),
+          onTap: () {
+            // Aseta valittu ehdotus hakukenttään
+            query = fileItem.name;
+            // Näytä tulokset valitun ehdotuksen perusteella
+            showResults(context);
+          },
+        );
+      },
+    );
+  }
+
+  List<FileItem> _performSearch(String query) {
+    // Toteuta haku kansion sisällä
+    return folderContent.where((file) {
+      // Voit suorittaa haun haluamallasi tavalla tässä
+      return file.name.toLowerCase().contains(query.toLowerCase());
+    }).toList();
+  }
+}
+
 // File management methods
 class FileUtilities {
   static void openFile(BuildContext context, FileItem fileItem) {
@@ -383,6 +463,15 @@ class FolderViewPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(folderName),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // Show search field
+              showSearch(
+                  context: context,
+                  delegate: FolderSearchDelegate(folderContent, folderName));
+            },
+          ),
           PopupMenuButton(
             onSelected: (value) {
               if (value == 'renameFolder') {
