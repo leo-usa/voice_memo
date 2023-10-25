@@ -99,7 +99,7 @@ class MySearchDelegate extends SearchDelegate<String> {
   List<Widget> buildActions(BuildContext context) {
     return <Widget>[
       IconButton(
-        icon: Icon(Icons.clear),
+        icon: const Icon(Icons.clear),
         onPressed: () {
           query = '';
         },
@@ -110,9 +110,9 @@ class MySearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back),
+      icon: const Icon(Icons.arrow_back),
       onPressed: () {
-        close(context, ""); // Asetetaan hakutulokseksi tyhjä merkkijono
+        close(context, ""); // Empty string
       },
     );
   }
@@ -140,7 +140,7 @@ class MySearchDelegate extends SearchDelegate<String> {
   @override
   Widget buildSuggestions(BuildContext context) {
     final suggestionList = query.isEmpty
-        ? [] // Näytä tyhjä lista, jos hakukenttä on tyhjä
+        ? [] // if search is empty, show empty list
         : filenames
             .where(
                 (file) => file.name.toLowerCase().contains(query.toLowerCase()))
@@ -153,9 +153,9 @@ class MySearchDelegate extends SearchDelegate<String> {
         return ListTile(
           title: Text(fileItem.name),
           onTap: () {
-            // Aseta valittu ehdotus hakukenttään
+            // set the selected suggestion to search field
             query = fileItem.name;
-            // Näytä tulokset valitun ehdotuksen perusteella
+            // show results by the chosen suggestion
             showResults(context);
           },
         );
