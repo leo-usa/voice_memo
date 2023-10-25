@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'opened_file_page.dart'; // Tuo OpenedFilePage
+import 'opened_file_page.dart';
 
 class FileItem {
   final String name;
@@ -93,14 +93,79 @@ final List<String> foldernames = <String>[
   'Ideas',
 ];
 
-class FilesPage extends StatefulWidget {
-  const FilesPage({Key? key}) : super(key: key);
+// Search functionality
+class MySearchDelegate extends SearchDelegate<String> {
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return <Widget>[
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
 
   @override
-  State<FilesPage> createState() => _FilesPageState();
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, ""); // Asetetaan hakutulokseksi tyhjä merkkijono
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final searchResults = filenames
+        .where((file) => file.name.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+
+    return ListView.builder(
+      itemCount: searchResults.length,
+      itemBuilder: (BuildContext context, int index) {
+        FileItem fileItem = searchResults[index];
+        return FileListTile(
+          fileItem: fileItem,
+          onTap: () {
+            FileUtilities.openFile(context, fileItem);
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final suggestionList = query.isEmpty
+        ? [] // Näytä tyhjä lista, jos hakukenttä on tyhjä
+        : filenames
+            .where(
+                (file) => file.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+
+    return ListView.builder(
+      itemCount: suggestionList.length,
+      itemBuilder: (BuildContext context, int index) {
+        FileItem fileItem = suggestionList[index];
+        return ListTile(
+          title: Text(fileItem.name),
+          onTap: () {
+            // Aseta valittu ehdotus hakukenttään
+            query = fileItem.name;
+            // Näytä tulokset valitun ehdotuksen perusteella
+            showResults(context);
+          },
+        );
+      },
+    );
+  }
 }
 
-class FileUtils {
+// File management methods
+class FileUtilities {
   static void openFile(BuildContext context, FileItem fileItem) {
     // Avaa tiedosto valitussa näkymässä
     Navigator.of(context).push(
@@ -111,6 +176,7 @@ class FileUtils {
   }
 }
 
+// File list element
 class FileListTile extends StatelessWidget {
   final FileItem fileItem;
   final void Function() onTap;
@@ -136,6 +202,14 @@ class FileListTile extends StatelessWidget {
       ],
     );
   }
+}
+
+// Main files page view
+class FilesPage extends StatefulWidget {
+  const FilesPage({Key? key}) : super(key: key);
+
+  @override
+  State<FilesPage> createState() => _FilesPageState();
 }
 
 class _FilesPageState extends State<FilesPage> {
@@ -188,7 +262,7 @@ class _FilesPageState extends State<FilesPage> {
       selectedFolderContent = getFolderContent(folderName);
     });
 
-    // Avaa kansion sisällön uudessa näkymässä
+    // Opens folder in new view
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => FolderViewPage(
@@ -207,6 +281,18 @@ class _FilesPageState extends State<FilesPage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Files'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                // Show search field
+                showSearch(
+                  context: context,
+                  delegate: MySearchDelegate(), // Search functionality
+                );
+              },
+            ),
+          ],
           bottom: TabBar(
             indicatorSize: TabBarIndicatorSize.tab,
             tabs: const [
@@ -223,7 +309,7 @@ class _FilesPageState extends State<FilesPage> {
               });
             },
           ),
-          toolbarHeight: 60.0, // AppBarin korkeus
+          toolbarHeight: 60.0, // AppBar custom height
         ),
         body: TabBarView(
           children: [
@@ -234,7 +320,7 @@ class _FilesPageState extends State<FilesPage> {
                 return FileListTile(
                   fileItem: fileItem,
                   onTap: () {
-                    FileUtils.openFile(context, fileItem);
+                    FileUtilities.openFile(context, fileItem);
                   },
                 );
               },
@@ -276,11 +362,12 @@ class _FilesPageState extends State<FilesPage> {
   }
 
   List<FileItem> getFolderContent(String folderName) {
-    // Palauta luettelo tiedostoista
+    // Return list of files
     return filenames.where((file) => file.folderName == folderName).toList();
   }
 }
 
+// Folder view
 class FolderViewPage extends StatelessWidget {
   final String folderName;
   final List<FileItem> folderContent;
@@ -299,9 +386,9 @@ class FolderViewPage extends StatelessWidget {
           PopupMenuButton(
             onSelected: (value) {
               if (value == 'renameFolder') {
-                // Tässä voit toteuttaa kansion nimen muokkaamisen
+                // Insert file rename functionality
               } else if (value == 'deleteFolder') {
-                // Tässä voit toteuttaa kansion poistamisen
+                // Insert delete folder functionality
               }
             },
             icon: const Icon(Icons.more_vert),
@@ -355,7 +442,7 @@ class FolderViewPage extends StatelessWidget {
                         fileItem: fileItem,
                         onTap: () {
                           if (isFileInFolder) {
-                            FileUtils.openFile(context, fileItem);
+                            FileUtilities.openFile(context, fileItem);
                           }
                         },
                       );
