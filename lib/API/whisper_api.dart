@@ -16,7 +16,7 @@ class WhisperRequest {
   File? file;
   final String model = "whisper-1";
 
-  WhisperRequest(File file) {
+  WhisperRequest(File? file) {
     this.file = file;
   }
 }
@@ -35,7 +35,7 @@ Future<String?> requestWhisper(File file) async {
     String chatResponse = response.text;
     return chatResponse;
   } catch (e) {
-    print("error $e");
+    print("requestWhisper error $e");
   }
   return null;
 }
