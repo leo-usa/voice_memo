@@ -8,7 +8,7 @@ final Uri whisperUrl =
 final Uri promptUrl = Uri.parse("https://api.openai.com/v1/chat/completions");
 
 final Map<String, String> headers = {
-  'Content-Type': 'application/json',
+  'Content-Type': 'multipart/form-data',
   'Authorization': 'Bearer $apiKey',
 };
 
@@ -30,12 +30,12 @@ Future<String?> requestWhisper(File file) async {
     http.Response response = await http.post(
       whisperUrl,
       headers: headers,
-      body: json.encode(request),
+      body: {request.file, request.model},
     );
-    String chatResponse = response.text;
+    String chatResponse = response.toString();
     return chatResponse;
   } catch (e) {
-    print("requestWhisper error $e");
+    print("requestWhisper error: $e");
   }
   return null;
 }
