@@ -52,7 +52,7 @@ class _RecordPageState extends State<RecordPage> {
       String? path = await audioRecord.stop();
       var file = File(path!);
       print(file);
-      var req = requestWhisper(file);
+      var req = await requestWhisper(file);
       print(req);
       setState(() {
         isRecording = false;

@@ -21,21 +21,26 @@ class WhisperRequest {
   }
 }
 
-Future<String?> requestWhisper(File file) async {
+Future<String> requestWhisper(File file) async {
   try {
-    WhisperRequest request = WhisperRequest(file);
-    if (file == null) {
-      return null;
-    }
-    http.Response response = await http.post(
+    var request = http.MultipartRequest('POST', whisperUrl);
+    request.headers.addAll(({'Authorization': 'Bearer $apiKey'}));
+    request.fields["model"] = 'whisper-1';
+    request.files.add(await http.MultipartFile.fromPath('file', file.path));
+    var response = await request.send();
+    var respStream = await http.Response.fromStream(response);
+    final respData = json.decode(respStream.body);
+
+    /*http.Response response = await http.post(
       whisperUrl,
       headers: headers,
-      body: {request.file, request.model},
-    );
-    String chatResponse = response.toString();
-    return chatResponse;
+      body: {request.file, request.model, null, null, null, null},
+    );*/
+
+    print(respData);
+    return respData.toString();
   } catch (e) {
     print("requestWhisper error: $e");
   }
-  return null;
+  return "null";
 }
