@@ -12,21 +12,13 @@ final Map<String, String> headers = {
   'Authorization': 'Bearer $apiKey',
 };
 
-class WhisperRequest {
-  File? file;
-  final String model = "whisper-1";
-
-  WhisperRequest(File? file) {
-    this.file = file;
-  }
-}
-
-Future<String> requestWhisper(File file) async {
+Future<String> requestWhisper(String file, String? lang) async {
   try {
     var request = http.MultipartRequest('POST', whisperUrl);
     request.headers.addAll(({'Authorization': 'Bearer $apiKey'}));
     request.fields["model"] = 'whisper-1';
-    request.files.add(await http.MultipartFile.fromPath('file', file.path));
+    if (lang != null) request.fields["language"] = lang;
+    request.files.add(await http.MultipartFile.fromPath('file', file));
     var response = await request.send();
     var respStream = await http.Response.fromStream(response);
     final respData = json.decode(respStream.body);

@@ -50,9 +50,8 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> stopRecording() async {
     try {
       String? path = await audioRecord.stop();
-      var file = File(path!);
-      print(file);
-      var req = await requestWhisper(file);
+      print(path);
+      var req = await requestWhisper(path!);
       print(req);
       setState(() {
         isRecording = false;
