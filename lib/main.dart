@@ -115,7 +115,7 @@ class OnboardingApp extends StatelessWidget {
                 "We're excited to have you on board! Our app is designed to make your professional life easier by transforming spoken words into text using the power of AI. Whether you're recording meetings, interviews, or any other conversations, we've got you covered.",
             image: Image.asset(
               "assets/img/logo_still.png",
-              height: 80.0,
+              height: 70.0,
             ),
           ),
           PageViewModel(
