@@ -38,7 +38,7 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -87,6 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+// Onboarding, will be shown only the first time user enters the app
 class OnboardingApp extends StatelessWidget {
   const OnboardingApp({Key? key}) : super(key: key);
 
@@ -102,7 +103,7 @@ class OnboardingApp extends StatelessWidget {
       ),
       home: IntroductionScreen(
         dotsDecorator: DotsDecorator(
-          activeColor: Colors.cyan, // Aktiivisen sivun indikaattorin väri
+          activeColor: Colors.cyan,
           activeSize: const Size(18, 9),
           activeShape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -112,7 +113,10 @@ class OnboardingApp extends StatelessWidget {
             title: "Welcome to Voice Memo",
             body:
                 "We're excited to have you on board! Our app is designed to make your professional life easier by transforming spoken words into text using the power of AI. Whether you're recording meetings, interviews, or any other conversations, we've got you covered.",
-            image: Image.asset("assets/img/logo_still.png"),
+            image: Image.asset(
+              "assets/img/logo_still.png",
+              height: 80.0,
+            ),
           ),
           PageViewModel(
             title: "Recording Made Easy!",
@@ -137,7 +141,7 @@ class OnboardingApp extends StatelessWidget {
             body:
                 "Smart file organization in specific folders to easy access to them later. Focus on what matters most, and let us handle the rest. \n\n Welcome to a smarter way of working!",
             image: Image.asset(
-              "assets/img/workflow_onboard.png",
+              "assets/img/folder_onboard.png",
               height: 120.0,
             ),
           ),
@@ -161,6 +165,7 @@ class OnboardingApp extends StatelessWidget {
   }
 }
 
+// Reset onboarding -button while developing
 class ResetOnboardingButton extends StatelessWidget {
   const ResetOnboardingButton({Key? key}) : super(key: key);
 
