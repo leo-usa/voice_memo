@@ -10,6 +10,7 @@ late AudioPlayer audioPlayer;
 bool isRecording = false;
 bool isPlaying = false;
 String audioPath = '';
+String? transcript;
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -51,8 +52,8 @@ class _RecordPageState extends State<RecordPage> {
     try {
       String? path = await audioRecord.stop();
       print(path);
-      var req = await requestWhisper(path!);
-      print(req);
+      var req = await requestWhisper(path!, null);
+      transcript = req;
       setState(() {
         isRecording = false;
         audioPath = path!;
@@ -102,6 +103,7 @@ class _RecordPageState extends State<RecordPage> {
                 onPressed: isPlaying ? stopPlaying : playRecording,
                 child: Text(isPlaying ? 'Stop Playback' : 'Play'),
               ),
+            if (transcript != null) Text("$transcript"),
           ],
         ),
       ),
