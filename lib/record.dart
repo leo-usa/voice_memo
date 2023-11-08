@@ -1,13 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:voice_memo/API/whisper_api.dart';
 
 late Record audioRecord;
 late AudioPlayer audioPlayer;
 bool isRecording = false;
 bool isPlaying = false;
 String audioPath = '';
-
+String? transcript;
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -48,6 +51,9 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> stopRecording() async {
     try {
       String? path = await audioRecord.stop();
+      print(path);
+      var req = await requestWhisper(path!, null);
+      transcript = req;
       setState(() {
         isRecording = false;
         audioPath = path!;
@@ -57,16 +63,14 @@ class _RecordPageState extends State<RecordPage> {
     }
   }
 
- Future<void> playRecording() async{
-    try{
+  Future<void> playRecording() async {
+    try {
       Source urlSource = UrlSource(audioPath);
       await audioPlayer.play(urlSource);
-    }
-    catch(e){
+    } catch (e) {
       print('Error playing audio : $e');
     }
   }
-
 
   Future<void> stopPlaying() async {
     try {
@@ -99,11 +103,10 @@ class _RecordPageState extends State<RecordPage> {
                 onPressed: isPlaying ? stopPlaying : playRecording,
                 child: Text(isPlaying ? 'Stop Playback' : 'Play'),
               ),
+            if (transcript != null) Text("$transcript"),
           ],
         ),
       ),
     );
   }
 }
-
-
