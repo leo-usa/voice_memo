@@ -17,11 +17,12 @@ Future<String> requestWhisper(String file, String? lang) async {
     var request = http.MultipartRequest('POST', whisperUrl);
     request.headers.addAll(({'Authorization': 'Bearer $apiKey'}));
     request.fields["model"] = 'whisper-1';
+    request.fields["response_format"] = "text";
     if (lang != null) request.fields["language"] = lang;
     request.files.add(await http.MultipartFile.fromPath('file', file));
     var response = await request.send();
     var respStream = await http.Response.fromStream(response);
-    final respData = json.decode(respStream.body);
+    final respData = respStream.body;
 
     /*http.Response response = await http.post(
       whisperUrl,
@@ -30,7 +31,7 @@ Future<String> requestWhisper(String file, String? lang) async {
     );*/
 
     print(respData);
-    return respData.toString();
+    return respData;
   } catch (e) {
     print("requestWhisper error: $e");
   }
