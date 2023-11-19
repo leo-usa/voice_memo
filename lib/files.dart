@@ -5,18 +5,22 @@ import 'dart:io';
 
 class FileItem {
   final String name;
+  final String titlePath;
   final String date;
   final String folderName;
   final String originalText;
+  final String originalTextPath;
   // final String cleanedText;
   // final String summaryText;
   final String audioPath;
 
   FileItem({
     required this.name,
+    required this.titlePath,
     required this.date,
     required this.folderName,
     required this.originalText,
+    required this.originalTextPath,
     // required this.cleanedText,
     // required this.summaryText,
     required this.audioPath,
@@ -64,22 +68,30 @@ Future<void> updateFileNames() async {
       String data = File(path).readAsStringSync();
       print("$path text: $data");
       timestampToData[timestamp]!["original_text"] = data;
+      timestampToData[timestamp]!["original_text_path"] = path;
     } else if (isTitle) {
       String data = File(path).readAsStringSync();
       timestampToData[timestamp]!["title"] = data;
+      timestampToData[timestamp]!["title_path"] = path;
     }
   }
 
   print(timestampToData);
 
-  for (String timestamp in timestampToData.keys) {
+  List<String> sortedKeys = timestampToData.keys.toList()..sort();
+
+  for (String timestamp in sortedKeys) {
     Map<String, dynamic> data = timestampToData[timestamp]!;
 
     String title = data.containsKey("title") ? data["title"] : timestamp;
+    String titlePath = data.containsKey("title_path") ? data["title_path"] : "";
     String audioPath = data.containsKey("audio_path") ? data["audio_path"] : "";
     String originalText = data.containsKey("original_text")
         ? data["original_text"]
         : "Missing transcription!";
+    String originalTextPath = data.containsKey("original_text_path")
+        ? data["original_text_path"]
+        : "";
 
     int year = int.parse(timestamp.substring(0, 4));
     int month = int.parse(timestamp.substring(4, 6));
@@ -91,9 +103,11 @@ Future<void> updateFileNames() async {
 
     FileItem fileItem = FileItem(
       name: title,
+      titlePath: titlePath,
       date: timestampDate,
       folderName: "root",
       originalText: originalText,
+      originalTextPath: originalTextPath,
       audioPath: audioPath,
     );
     filenames.insert(0, fileItem);
@@ -196,6 +210,8 @@ class MySearchDelegate extends SearchDelegate<String> {
     );
   }
 
+  void updateList() {}
+
   @override
   Widget buildResults(BuildContext context) {
     final searchResults = filenames
@@ -209,7 +225,7 @@ class MySearchDelegate extends SearchDelegate<String> {
         return FileListTile(
           fileItem: fileItem,
           onTap: () {
-            FileUtilities.openFile(context, fileItem);
+            FileUtilities.openFile(context, fileItem, updateList);
           },
         );
       },
@@ -325,14 +341,18 @@ class FolderSearchDelegate extends SearchDelegate<String> {
 
 // File management methods
 class FileUtilities {
-  static void openFile(BuildContext context, FileItem fileItem) {
+  static void openFile(
+      BuildContext context, FileItem fileItem, Function updateList) {
     // Avaa tiedosto valitussa näkymässä
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => OpenedFilePage(
             title: fileItem.name,
+            titlePath: fileItem.titlePath,
             originalText: fileItem.originalText,
-            audioPath: fileItem.audioPath),
+            originalTextPath: fileItem.originalTextPath,
+            audioPath: fileItem.audioPath,
+            updateList: updateList),
       ),
     );
   }
@@ -378,6 +398,21 @@ class _FilesPageState extends State<FilesPage> {
   bool isFoldersTabSelected = false;
   String selectedFolder = '';
   List<FileItem> selectedFolderContent = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    await updateFileNames();
+    setState(() {});
+  }
+
+  void updateList() async {
+    await _initializeData();
+  }
 
   void _showCreateFolderDialog(BuildContext context) {
     String newFolderName = '';
@@ -482,7 +517,7 @@ class _FilesPageState extends State<FilesPage> {
                 return FileListTile(
                   fileItem: fileItem,
                   onTap: () {
-                    FileUtilities.openFile(context, fileItem);
+                    FileUtilities.openFile(context, fileItem, updateList);
                   },
                 );
               },
@@ -538,6 +573,8 @@ class FolderViewPage extends StatelessWidget {
     required this.folderName,
     required this.folderContent,
   });
+
+  void updateList() {}
 
   @override
   Widget build(BuildContext context) {
@@ -613,7 +650,8 @@ class FolderViewPage extends StatelessWidget {
                         fileItem: fileItem,
                         onTap: () {
                           if (isFileInFolder) {
-                            FileUtilities.openFile(context, fileItem);
+                            FileUtilities.openFile(
+                                context, fileItem, updateList);
                           }
                         },
                       );

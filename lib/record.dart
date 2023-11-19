@@ -7,7 +7,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:voice_memo/API/whisper_api.dart';
 import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
-import 'files.dart';
 
 late Record audioRecord;
 late AudioPlayer audioPlayer;

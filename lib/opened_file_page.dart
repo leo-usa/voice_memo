@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 class OpenedFilePage extends StatefulWidget {
   final String title;
+  final String titlePath;
   final String originalText;
+  final String originalTextPath;
   final String audioPath;
+  final Function updateList;
 
   const OpenedFilePage(
       {Key? key,
       required this.title,
+      required this.titlePath,
       required this.originalText,
-      required this.audioPath})
+      required this.originalTextPath,
+      required this.audioPath,
+      required this.updateList})
       : super(key: key);
 
   @override
@@ -35,6 +42,58 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     super.dispose();
   }
 
+  Future<void> deleteFiles(BuildContext context, String titlePath,
+      String originalTextPath, String audioPath, Function updateList) async {
+    List<String> filePaths = [
+      titlePath,
+      originalTextPath,
+      audioPath,
+    ];
+
+    for (String filePath in filePaths) {
+      try {
+        await File(filePath).delete();
+        // Tiedosto poistettiin onnistuneesti
+        print('File deleted successfully: $filePath');
+      } catch (error) {
+        // Virhe tiedoston poistamisessa
+        print('Error deleting file $filePath: $error');
+      }
+    }
+    await updateList();
+    Navigator.of(context).pop();
+  }
+
+  void showDeleteConfirmationDialog(BuildContext context, String titlePath,
+      String originalTextPath, String audioPath, Function updateList) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Files'),
+          content: Text('Are you sure you want to delete these files?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Sulje dialogi
+              },
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await deleteFiles(context, titlePath, originalTextPath,
+                    audioPath, updateList); // Poista tiedostot
+                widget.updateList();
+                Navigator.of(context).pop();
+              },
+              child: Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +111,12 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                 } else if (value == 'moveFile') {
                   // Tässä voit toteuttaa tiedoston siirron
                 } else if (value == 'delete') {
-                  // Tässä voit toteuttaa tiedoston poiston
+                  showDeleteConfirmationDialog(
+                      context,
+                      widget.titlePath,
+                      widget.originalTextPath,
+                      widget.audioPath,
+                      widget.updateList);
                 }
               },
               icon: const Icon(Icons.more_vert),
@@ -124,9 +188,60 @@ class _OpenedFilePageState extends State<OpenedFilePage>
         controller: _tabController,
         children: [
           // Lisää tänne kunkin vaihtoehdon sisältö
-          Center(child: Text('${widget.originalText}')),
-          Center(child: Text('Cleaned content for ${widget.title}')),
-          Center(child: Text('Summary content for ${widget.title}')),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${widget.originalText}',
+                    style: const TextStyle(
+                      height: 1.5,
+                      fontSize: 16.0,
+                    ),
+                  ),
+                  // Muuta sisältöä tarpeidesi mukaan...
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cleaned content for ${widget.title}',
+                    style: const TextStyle(
+                      height: 1.5,
+                      fontSize: 16.0,
+                    ),
+                  ),
+                  // Muuta sisältöä tarpeidesi mukaan...
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Summary content for ${widget.title}',
+                    style: const TextStyle(
+                      height: 1.5,
+                      fontSize: 16.0,
+                    ),
+                  ),
+                  // Muuta sisältöä tarpeidesi mukaan...
+                ],
+              ),
+            ),
+          ),
           Center(child: Text('Audio content for ${widget.audioPath}')),
         ],
       ),

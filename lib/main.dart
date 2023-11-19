@@ -72,10 +72,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
         onDestinationSelected: (int index) async {
-          if (index == 0) {
-            // Check if "Files" destination is selected
-            await updateFileNames(); // Call your async function here
-          }
           setState(() {
             currentPageIndex = index;
           });
