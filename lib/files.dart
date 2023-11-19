@@ -1,91 +1,170 @@
 import 'package:flutter/material.dart';
 import 'opened_file_page.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class FileItem {
   final String name;
   final String date;
   final String folderName;
-  // final String originalText;
+  final String originalText;
   // final String cleanedText;
   // final String summaryText;
-  // final String audio;
+  final String audioPath;
 
   FileItem({
     required this.name,
     required this.date,
     required this.folderName,
-    // required this.originalText,
+    required this.originalText,
     // required this.cleanedText,
     // required this.summaryText,
-    // required this.audio,
+    required this.audioPath,
   });
 }
 
-final List<FileItem> filenames = <FileItem>[
-  FileItem(
-    name: 'Sales Presentation Meeting',
-    date: '23.10.2023',
-    folderName: 'Meeting notes',
-    // originalText: 'Original text for',
-    // cleanedText: 'Cleaned text for',
-    // summaryText: 'Summary text for',
-    // audio: 'Audio for'
-  ),
-  FileItem(
-    name: 'Project Kickoff',
-    date: '15.10.2023',
-    folderName: 'Meeting notes',
-    // originalText: 'Original text for',
-    // cleanedText: 'Cleaned text for',
-    // summaryText: 'Summary text for',
-    // audio: 'Audio for'
-  ),
-  FileItem(
-    name: 'Weekly Newsletter',
-    date: '4.10.2023',
-    folderName: 'Email drafts',
-    // originalText: 'Original text for',
-    // cleanedText: 'Cleaned text for',
-    // summaryText: 'Summary text for',
-    // audio: 'Audio for'
-  ),
-  FileItem(
-    name: 'Design Inspiration',
-    date: '4.10.2023',
-    folderName: 'Ideas',
-    // originalText: 'Original text for',
-    // cleanedText: 'Cleaned text for',
-    // summaryText: 'Summary text for',
-    // audio: 'Audio for'
-  ),
-  FileItem(
-    name: 'Creative Marketing Strategies',
-    date: '1.10.2023',
-    folderName: 'Ideas',
-    // originalText: 'Original text for',
-    // cleanedText: 'Cleaned text for',
-    // summaryText: 'Summary text for',
-    // audio: 'Audio for'
-  ),
-  FileItem(
-    name: 'New Product Ideas',
-    date: '27.9.2023',
-    folderName: 'Ideas',
-    // originalText: 'Original text for',
-    // cleanedText: 'Cleaned text for',
-    // summaryText: 'Summary text for',
-    // audio: 'Audio for'
-  ),
-  FileItem(
-    name: 'Client Meeting Notes',
-    date: '25.9.2023',
-    folderName: 'Meeting notes',
-    // originalText: 'Original text for',
-    // cleanedText: 'Cleaned text for',
-    // summaryText: 'Summary text for',
-    // audio: 'Audio for'
-  ),
-];
+final List<FileItem> filenames = <FileItem>[];
+
+Future<void> updateFileNames() async {
+  final appDocumentsDir = await getApplicationDocumentsDirectory();
+
+  filenames.clear();
+
+  Map<String, Map<String, String>> timestampToData = {};
+
+  await for (var entity
+      in appDocumentsDir.list(recursive: true, followLinks: false)) {
+    var path = entity.path;
+
+    List<String> pathParts = path.split('/');
+    String filename = pathParts.last;
+
+    bool isRecording = filename.contains("recording");
+
+    if (!isRecording) {
+      continue;
+    }
+
+    List<String> filenameParts = filename.split("_");
+    String timestamp = filenameParts.sublist(2).join("");
+    timestamp = timestamp.split(".")[0];
+
+    if (!timestampToData.containsKey(timestamp)) {
+      timestampToData[timestamp] = {};
+    }
+
+    bool isAudio = filename.contains("Audio");
+    bool isOriginalText = filename.contains("Original");
+    bool isTitle = filename.contains("Title");
+
+    if (isAudio) {
+      String data = path;
+      timestampToData[timestamp]!["audio_path"] = data;
+    } else if (isOriginalText) {
+      String data = File(path).readAsStringSync();
+      print("$path text: $data");
+      timestampToData[timestamp]!["original_text"] = data;
+    } else if (isTitle) {
+      String data = File(path).readAsStringSync();
+      timestampToData[timestamp]!["title"] = data;
+    }
+  }
+
+  print(timestampToData);
+
+  for (String timestamp in timestampToData.keys) {
+    Map<String, dynamic> data = timestampToData[timestamp]!;
+
+    String title = data.containsKey("title") ? data["title"] : timestamp;
+    String audioPath = data.containsKey("audio_path") ? data["audio_path"] : "";
+    String originalText = data.containsKey("original_text")
+        ? data["original_text"]
+        : "Missing transcription!";
+
+    int year = int.parse(timestamp.substring(0, 4));
+    int month = int.parse(timestamp.substring(4, 6));
+    int day = int.parse(timestamp.substring(6, 8));
+
+    print(originalText);
+
+    String timestampDate = "$day.$month.$year";
+
+    FileItem fileItem = FileItem(
+      name: title,
+      date: timestampDate,
+      folderName: "root",
+      originalText: originalText,
+      audioPath: audioPath,
+    );
+    filenames.insert(0, fileItem);
+  }
+}
+
+// final List<FileItem> filenames = <FileItem>[
+//   FileItem(
+//     name: 'Sales Presentation Meeting',
+//     date: '23.10.2023',
+//     folderName: 'Meeting notes',
+//     // originalText: 'Original text for',
+//     // cleanedText: 'Cleaned text for',
+//     // summaryText: 'Summary text for',
+//     // audio: 'Audio for'
+//   ),
+//   FileItem(
+//     name: 'Project Kickoff',
+//     date: '15.10.2023',
+//     folderName: 'Meeting notes',
+//     // originalText: 'Original text for',
+//     // cleanedText: 'Cleaned text for',
+//     // summaryText: 'Summary text for',
+//     // audio: 'Audio for'
+//   ),
+//   FileItem(
+//     name: 'Weekly Newsletter',
+//     date: '4.10.2023',
+//     folderName: 'Email drafts',
+//     // originalText: 'Original text for',
+//     // cleanedText: 'Cleaned text for',
+//     // summaryText: 'Summary text for',
+//     // audio: 'Audio for'
+//   ),
+//   FileItem(
+//     name: 'Design Inspiration',
+//     date: '4.10.2023',
+//     folderName: 'Ideas',
+//     // originalText: 'Original text for',
+//     // cleanedText: 'Cleaned text for',
+//     // summaryText: 'Summary text for',
+//     // audio: 'Audio for'
+//   ),
+//   FileItem(
+//     name: 'Creative Marketing Strategies',
+//     date: '1.10.2023',
+//     folderName: 'Ideas',
+//     // originalText: 'Original text for',
+//     // cleanedText: 'Cleaned text for',
+//     // summaryText: 'Summary text for',
+//     // audio: 'Audio for'
+//   ),
+//   FileItem(
+//     name: 'New Product Ideas',
+//     date: '27.9.2023',
+//     folderName: 'Ideas',
+//     // originalText: 'Original text for',
+//     // cleanedText: 'Cleaned text for',
+//     // summaryText: 'Summary text for',
+//     // audio: 'Audio for'
+//   ),
+//   FileItem(
+//     name: 'Client Meeting Notes',
+//     date: '25.9.2023',
+//     folderName: 'Meeting notes',
+//     // originalText: 'Original text for',
+//     // cleanedText: 'Cleaned text for',
+//     // summaryText: 'Summary text for',
+//     // audio: 'Audio for'
+//   ),
+// ];
 
 final List<String> foldernames = <String>[
   'Meeting notes',
@@ -250,7 +329,10 @@ class FileUtilities {
     // Avaa tiedosto valitussa näkymässä
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => OpenedFilePage(title: fileItem.name),
+        builder: (context) => OpenedFilePage(
+            title: fileItem.name,
+            originalText: fileItem.originalText,
+            audioPath: fileItem.audioPath),
       ),
     );
   }

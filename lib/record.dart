@@ -7,6 +7,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:voice_memo/API/whisper_api.dart';
 import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'files.dart';
 
 late Record audioRecord;
 late AudioPlayer audioPlayer;
@@ -54,25 +55,29 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> stopRecording() async {
     try {
       String? path = await audioRecord.stop();
-     // Luo päivämäärä- ja aikaformaatti
-    final formatter = DateFormat('yyyyMMdd_HHmmss');
-    final formattedDate = formatter.format(DateTime.now());
+      // Luo päivämäärä- ja aikaformaatti
+      final formatter = DateFormat('yyyyMMdd_HHmmss');
+      final formattedDate = formatter.format(DateTime.now());
 
-    // Luo tiedostonimi yhdistämällä annettu nimi, päivämäärä ja aika
-    final fileNameOriginalText = 'recording_Original_$formattedDate.txt';
-    final fileNameAudio = 'recording_Audio_$formattedDate';
-    
-    
-    print(path);
-    
+      // Luo tiedostonimi yhdistämällä annettu nimi, päivämäärä ja aika
+      final fileNameOriginalText = 'recording_Original_$formattedDate.txt';
+      final fileNameAudio = 'recording_Audio_$formattedDate';
+      final fileNameTitle = 'recording_Title_$formattedDate';
+
+      final title = 'Memo $formattedDate';
+
+      print(path);
+
       var req = await requestWhisper(path!, null);
       transcript = req;
-      await saveAudioToFile(path!, fileNameAudio);
+      await saveAudioToFile(path, fileNameAudio);
       await saveTextToFile(transcript!, fileNameOriginalText);
+      await saveTextToFile(title, fileNameTitle);
       setState(() {
         isRecording = false;
-        audioPath = path!; 
+        audioPath = path;
       });
+      // await updateFileNames();
     } catch (e) {
       print('Error stopping recording: $e');
     }
@@ -99,7 +104,7 @@ class _RecordPageState extends State<RecordPage> {
     }
   }
 
-   Future<void> saveAudioToFile(String audioPath, String fileNameAudio) async {
+  Future<void> saveAudioToFile(String audioPath, String fileNameAudio) async {
     try {
       final appDocumentsDir = await getApplicationDocumentsDirectory();
       final destinationPath = '${appDocumentsDir.path}/$fileNameAudio';
@@ -109,20 +114,20 @@ class _RecordPageState extends State<RecordPage> {
       print('Error saving audio to file: $e');
     }
   }
-Future<void> saveTextToFile(String text, String fileNameOriginalText) async {
-  try {
-    final appDocumentsDir = await getApplicationDocumentsDirectory();
-    final destinationPath = '${appDocumentsDir.path}/$fileNameOriginalText';
 
-    final file = File(destinationPath);
-    await file.writeAsString(text);
+  Future<void> saveTextToFile(String text, String fileNameOriginalText) async {
+    try {
+      final appDocumentsDir = await getApplicationDocumentsDirectory();
+      final destinationPath = '${appDocumentsDir.path}/$fileNameOriginalText';
 
-    print('Transcript saved to: $destinationPath');
-  } catch (e) {
-    print('Error saving transcript to file: $e');
+      final file = File(destinationPath);
+      await file.writeAsString(text);
+
+      print('Transcript saved to: $destinationPath');
+    } catch (e) {
+      print('Error saving transcript to file: $e');
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -131,17 +136,15 @@ Future<void> saveTextToFile(String text, String fileNameOriginalText) async {
         title: const Text('Record'),
       ),
       body: Center(
-        
         child: Column(
-          
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-           Lottie.asset(
-          'assets/img/lottie/hexSpinner.json', // Polku Lottie-tiedostoon
-          width: 50,
-          height: 50,
-          fit: BoxFit.cover,
-        ),
+            Lottie.asset(
+              'assets/img/lottie/hexSpinner.json', // Polku Lottie-tiedostoon
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+            ),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
@@ -154,9 +157,11 @@ Future<void> saveTextToFile(String text, String fileNameOriginalText) async {
               onPressed: isRecording ? stopRecording : startRecording,
               icon: Align(
                 alignment: Alignment.center,
-                child: Icon(isRecording ? Icons.stop : Icons.keyboard_voice_outlined, 
-                size: 80.0,),
+                child: Icon(
+                  isRecording ? Icons.stop : Icons.keyboard_voice_outlined,
+                  size: 80.0,
                 ),
+              ),
               label: Text(''),
             ),
             const SizedBox(height: 25),
@@ -165,7 +170,7 @@ Future<void> saveTextToFile(String text, String fileNameOriginalText) async {
                 onPressed: isPlaying ? stopPlaying : playRecording,
                 child: Text(isPlaying ? 'Stop' : 'Play'),
               ),
-if (transcript != null) Text("$transcript"),
+            if (transcript != null) Text("$transcript"),
           ],
         ),
       ),

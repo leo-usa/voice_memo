@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 
 class OpenedFilePage extends StatefulWidget {
   final String title;
+  final String originalText;
+  final String audioPath;
 
-  const OpenedFilePage({Key? key, required this.title}) : super(key: key);
+  const OpenedFilePage(
+      {Key? key,
+      required this.title,
+      required this.originalText,
+      required this.audioPath})
+      : super(key: key);
 
   @override
   State<OpenedFilePage> createState() => _OpenedFilePageState();
@@ -117,10 +124,10 @@ class _OpenedFilePageState extends State<OpenedFilePage>
         controller: _tabController,
         children: [
           // Lisää tänne kunkin vaihtoehdon sisältö
-          Center(child: Text('Original content for ${widget.title}')),
+          Center(child: Text('${widget.originalText}')),
           Center(child: Text('Cleaned content for ${widget.title}')),
           Center(child: Text('Summary content for ${widget.title}')),
-          Center(child: Text('Audio content for ${widget.title}')),
+          Center(child: Text('Audio content for ${widget.audioPath}')),
         ],
       ),
       floatingActionButton: FloatingActionButton(
