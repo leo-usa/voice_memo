@@ -68,6 +68,8 @@ class _RecordPageState extends State<RecordPage> {
       print(path);
 
       var req = await requestWhisper(path!, null);
+      var sum = await requestSummary(req);
+      var clean = await requestClean(req);
       transcript = req;
       await saveAudioToFile(path, fileNameAudio);
       await saveTextToFile(transcript!, fileNameOriginalText);
