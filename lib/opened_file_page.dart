@@ -8,6 +8,10 @@ class OpenedFilePage extends StatefulWidget {
   final String titlePath;
   final String originalText;
   final String originalTextPath;
+  final String cleanedText;
+  final String cleanedTextPath;
+  final String summaryText;
+  final String summaryTextPath;
   final String audioPath;
   final Function updateList;
 
@@ -17,6 +21,10 @@ class OpenedFilePage extends StatefulWidget {
       required this.titlePath,
       required this.originalText,
       required this.originalTextPath,
+      required this.cleanedText,
+      required this.cleanedTextPath,
+      required this.summaryText,
+      required this.summaryTextPath,
       required this.audioPath,
       required this.updateList})
       : super(key: key);
@@ -73,11 +81,19 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     return "${duration.inHours > 0 ? '${twoDigits(duration.inHours)}:' : ''}$twoDigitMinutes:$twoDigitSeconds";
   }
 
-  Future<void> deleteFiles(BuildContext context, String titlePath,
-      String originalTextPath, String audioPath, Function updateList) async {
+  Future<void> deleteFiles(
+      BuildContext context,
+      String titlePath,
+      String originalTextPath,
+      String cleanedTextPath,
+      String summaryTextPath,
+      String audioPath,
+      Function updateList) async {
     List<String> filePaths = [
       titlePath,
       originalTextPath,
+      cleanedTextPath,
+      summaryTextPath,
       audioPath,
     ];
 
@@ -100,8 +116,14 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     await file.writeAsString(newContents);
   }
 
-  void showDeleteConfirmationDialog(BuildContext context, String titlePath,
-      String originalTextPath, String audioPath, Function updateList) {
+  void showDeleteConfirmationDialog(
+      BuildContext context,
+      String titlePath,
+      String originalTextPath,
+      String cleanedTextPath,
+      String summaryTextPath,
+      String audioPath,
+      Function updateList) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -117,8 +139,14 @@ class _OpenedFilePageState extends State<OpenedFilePage>
             ),
             TextButton(
               onPressed: () async {
-                await deleteFiles(context, titlePath, originalTextPath,
-                    audioPath, updateList); // Poista tiedostot
+                await deleteFiles(
+                    context,
+                    titlePath,
+                    originalTextPath,
+                    cleanedTextPath,
+                    summaryTextPath,
+                    audioPath,
+                    updateList); // Poista tiedostot
                 Navigator.of(context).pop();
               },
               child: Text('Yes'),
@@ -185,6 +213,8 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                       context,
                       widget.titlePath,
                       widget.originalTextPath,
+                      widget.cleanedTextPath,
+                      widget.summaryTextPath,
                       widget.audioPath,
                       widget.updateList);
                 }
@@ -261,7 +291,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Cleaned content for ${widget.title}',
+                    '${widget.cleanedText}',
                     style: const TextStyle(
                       height: 1.5,
                       fontSize: 16.0,
@@ -279,7 +309,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Summary content for ${widget.title}',
+                    '${widget.summaryText}',
                     style: const TextStyle(
                       height: 1.5,
                       fontSize: 16.0,
@@ -317,11 +347,13 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                 Material(
                   elevation: 5.0, // Varjostus
                   shape: CircleBorder(), // Pyöreä muoto
-                  color: Colors.cyan,
+                  color: Theme.of(context).colorScheme.primary,
                   child: IconButton(
                     icon: Icon(
                       isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.black54, // Kuvakkeen väri
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onPrimary, // Kuvakkeen väri
                     ),
                     iconSize: 40.0, // Kuvakkeen koko
                     onPressed: toggleAudio,
@@ -333,12 +365,28 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                 ),
                 Column(
                   children: [
-                    Slider(
-                      value: currentPosition.inSeconds.toDouble(),
-                      max: totalDuration.inSeconds.toDouble(),
-                      onChanged: (value) {
-                        audioPlayer.seek(Duration(seconds: value.toInt()));
-                      },
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: Theme.of(context)
+                            .colorScheme
+                            .primary, // aktiivisen radan väri
+                        inactiveTrackColor: Theme.of(context)
+                            .colorScheme
+                            .onBackground, // inaktiivisen radan väri
+                        thumbColor: Theme.of(context)
+                            .colorScheme
+                            .primary, // liukurin väri
+                        overlayColor: Colors.cyan.withAlpha(
+                            32), // liukurin ympärillä näkyvän efektin väri
+                        trackHeight: 4.0, // radan korkeus
+                      ),
+                      child: Slider(
+                        value: currentPosition.inSeconds.toDouble(),
+                        max: totalDuration.inSeconds.toDouble(),
+                        onChanged: (value) {
+                          audioPlayer.seek(Duration(seconds: value.toInt()));
+                        },
+                      ),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

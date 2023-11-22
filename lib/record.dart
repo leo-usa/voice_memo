@@ -14,6 +14,8 @@ bool isRecording = false;
 bool isPlaying = false;
 String audioPath = '';
 String? transcript;
+String? cleanedText;
+String? summaryText;
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -60,6 +62,8 @@ class _RecordPageState extends State<RecordPage> {
 
       // Luo tiedostonimi yhdistämällä annettu nimi, päivämäärä ja aika
       final fileNameOriginalText = 'recording_Original_$formattedDate.txt';
+      final fileNameCleanedText = 'recording_Cleaned_$formattedDate.txt';
+      final fileNameSummaryText = 'recording_Summary_$formattedDate.txt';
       final fileNameAudio = 'recording_Audio_$formattedDate';
       final fileNameTitle = 'recording_Title_$formattedDate';
 
@@ -71,13 +75,44 @@ class _RecordPageState extends State<RecordPage> {
       var sum = await requestSummary(req);
       var clean = await requestClean(req);
       transcript = req;
+      cleanedText = clean;
+      summaryText = sum;
       await saveAudioToFile(path, fileNameAudio);
       await saveTextToFile(transcript!, fileNameOriginalText);
+      await saveTextToFile(cleanedText!, fileNameCleanedText);
+      await saveTextToFile(summaryText!, fileNameSummaryText);
       await saveTextToFile(title, fileNameTitle);
       setState(() {
         isRecording = false;
         audioPath = path;
       });
+
+      if (!mounted) return;
+
+      // Tiedoston tallennuksen jälkeen näytä viesti
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Align(
+            alignment: Alignment.center,
+            child: Text(
+              'File saved succesfully!',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          duration: const Duration(seconds: 3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.only(
+            bottom: 20.0,
+          ), // Työntää SnackBaria ylöspäin
+          behavior: SnackBarBehavior.floating, // Tehdään SnackBarista kelluva
+        ),
+      );
       // await updateFileNames();
     } catch (e) {
       print('Error stopping recording: $e');
@@ -171,7 +206,6 @@ class _RecordPageState extends State<RecordPage> {
                 onPressed: isPlaying ? stopPlaying : playRecording,
                 child: Text(isPlaying ? 'Stop' : 'Play'),
               ),
-            if (transcript != null) Text("$transcript"),
           ],
         ),
       ),
