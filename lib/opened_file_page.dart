@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:io';
 
+// ignore: must_be_immutable
 class OpenedFilePage extends StatefulWidget {
   String title;
   final String titlePath;
