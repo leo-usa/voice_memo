@@ -8,7 +8,7 @@ class OpenedFilePage extends StatefulWidget {
   final String titlePath;
   final String originalText;
   final String originalTextPath;
-  final String cleanedText;
+  String cleanedText;
   final String cleanedTextPath;
   final String summaryText;
   final String summaryTextPath;
@@ -40,6 +40,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
   bool isPlaying = false;
   Duration totalDuration = Duration();
   Duration currentPosition = Duration();
+  late Widget cleanedText; // Muuta tämä Widget-tyypiksi
 
   @override
   void initState() {
@@ -61,6 +62,51 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     _tabController.dispose();
     audioPlayer.dispose();
     super.dispose();
+  }
+
+  RichText addParagraphBreaksAndBoldTitles(String text, BuildContext context) {
+    List<TextSpan> spans = [];
+
+    // Etsitään otsikot, listakohteet ja muu teksti
+    var regex = RegExp(r'##\s*(.*?)\r?\n|\*\s*(.*?)\r?\n|([^#\*]+)');
+    var matches = regex.allMatches(text);
+
+    // Haetaan teematiedot contextista
+    var theme = Theme.of(context);
+    var defaultTextStyle = theme.textTheme.bodyLarge; // Vaihda tarvittaessa
+    var headerTextStyle = theme.textTheme.titleMedium
+        ?.copyWith(fontWeight: FontWeight.bold); // Otsikoiden tyyli
+    var listItemStyle = theme.textTheme.bodyLarge; // Lista-kohtien tyyli
+
+    for (var match in matches) {
+      if (match.group(1) != null) {
+        // Lisätään boldattu otsikko
+        spans.add(TextSpan(
+          text: match.group(1)!.trim() + '\n',
+          style: headerTextStyle,
+        ));
+      } else if (match.group(2) != null) {
+        // Lisätään lista-kohta
+        spans.add(TextSpan(
+          text: "• " + match.group(2)!.trim() + '\n',
+          style: listItemStyle,
+        ));
+      } else if (match.group(3) != null) {
+        // Lisätään normaali teksti
+        spans.add(TextSpan(
+          text: match.group(3)!.replaceAll("||", "\n"),
+          style: defaultTextStyle,
+        ));
+      }
+    }
+
+    // Palautetaan RichText, joka sisältää kaikki TextSpan-oliot
+    return RichText(
+      text: TextSpan(
+        children: spans,
+        style: defaultTextStyle,
+      ),
+    );
   }
 
   void toggleAudio() async {
@@ -198,6 +244,8 @@ class _OpenedFilePageState extends State<OpenedFilePage>
 
   @override
   Widget build(BuildContext context) {
+    Widget formattedCleanedText =
+        addParagraphBreaksAndBoldTitles(widget.cleanedText, context);
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(120.0),
@@ -273,11 +321,11 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${widget.originalText}',
-                    style: const TextStyle(
-                      height: 1.5,
-                      fontSize: 16.0,
-                    ),
+                    widget.originalText,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          height: 1.5,
+                          fontSize: 16.0,
+                        ),
                   ),
                   // Muuta sisältöä tarpeidesi mukaan...
                 ],
@@ -290,14 +338,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${widget.cleanedText}',
-                    style: const TextStyle(
-                      height: 1.5,
-                      fontSize: 16.0,
-                    ),
-                  ),
-                  // Muuta sisältöä tarpeidesi mukaan...
+                  formattedCleanedText, // Käytä muotoiltua tekstiä täällä
                 ],
               ),
             ),
@@ -309,11 +350,11 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${widget.summaryText}',
-                    style: const TextStyle(
-                      height: 1.5,
-                      fontSize: 16.0,
-                    ),
+                    widget.summaryText,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          height: 1.5,
+                          fontSize: 16.0,
+                        ),
                   ),
                   // Muuta sisältöä tarpeidesi mukaan...
                 ],

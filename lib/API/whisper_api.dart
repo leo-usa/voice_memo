@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'api_key.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -71,7 +70,7 @@ Future<String> requestClean(String text) async {
         {
           "role": "user",
           "content":
-              "Please clean up (fix any grammatical/typing mistakes, remove any fillers like 'uh' or 'um') the following text, in accordance with the language it is in: $text (if this fails for any reason, simply respond with 'unable to clean up')"
+              "DO NOT comment on my request; simply write the desired sentence in response. As a voice to text translator, provide a polished version of the following text. Format the response to match the context. Pay attention to logical organization and clarity.  Use '##' to mark the beginning of each title or heading and use the '||' symbol to separate different paragraphs. IF the sentence mentions the word list, use '*' to mark items in list. Ensure the text is readable and coherent. Write the response only in the same language as a reference $text. IF this fails for any reason, simply respond with 'unable to clean up'."
         }
       ]
     };
