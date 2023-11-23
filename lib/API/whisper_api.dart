@@ -51,7 +51,8 @@ Future<String> requestSummary(String text) async {
       headers: headers,
       body: json.encode(body),
     );
-    Map<String, dynamic> respJson = json.decode(response.body);
+    String respBody = utf8.decode(response.bodyBytes);
+    Map<String, dynamic> respJson = json.decode(respBody);
     List<dynamic> choices = respJson['choices'];
     Map<String, dynamic> message = choices[0]['message'];
     print(message['content']);
@@ -79,7 +80,8 @@ Future<String> requestClean(String text) async {
       headers: headers,
       body: json.encode(body),
     );
-    Map<String, dynamic> respJson = json.decode(response.body);
+    String respBody = utf8.decode(response.bodyBytes);
+    Map<String, dynamic> respJson = json.decode(respBody);
     List<dynamic> choices = respJson['choices'];
     Map<String, dynamic> message = choices[0]['message'];
     print(message['content']);
