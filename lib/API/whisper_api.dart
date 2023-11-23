@@ -37,7 +37,7 @@ var testTxt =
 Future<String> requestSummary(String text) async {
   try {
     var body = {
-      "model": "gpt-3.5-turbo",
+      "model": "gpt-4-1106-preview",
       "messages": [
         {
           "role": "user",
@@ -66,12 +66,12 @@ Future<String> requestSummary(String text) async {
 Future<String> requestClean(String text) async {
   try {
     var body = {
-      "model": "gpt-3.5-turbo",
+      "model": "gpt-4-1106-preview",
       "messages": [
         {
           "role": "user",
           "content":
-              "DO NOT comment on my request; simply write the desired sentence in response. As a voice to text translator, provide a polished version of the following text. Format the response to match the context. Pay attention to logical organization and clarity.  Use '##' to mark the beginning of each title or heading and use the '||' symbol to separate different paragraphs. IF the sentence mentions the word list, use '*' to mark items in list. Ensure the text is readable and coherent. Write the response only in the same language as a reference $text. IF this fails for any reason, simply respond with 'unable to clean up'."
+              "DO NOT comment on my request; simply write the desired sentence in response. As a voice to text translator, provide a polished version of the following text. Format the response to match the context. Pay attention to logical organization and clarity.  Use '##' to mark the beginning of each title or heading and use the '||' symbol to separate different paragraphs. IF the sentence mentions the word list, use '*' to mark items in list. Ensure the text is readable and coherent. Write the response only in the same language as a reference text. IF this fails for any reason, simply respond with 'unable to clean up'. \n Here's the text, pay special attention that you use the same language as the transcript: \n $text"
         }
       ]
     };
