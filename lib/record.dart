@@ -7,6 +7,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:voice_memo/API/whisper_api.dart';
 import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
+
 
 late Record audioRecord;
 late AudioPlayer audioPlayer;
@@ -14,6 +16,9 @@ bool isRecording = false;
 bool isPlaying = false;
 String audioPath = '';
 String? transcript;
+late Timer _timer;
+late Stopwatch _stopwatch;
+
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -22,17 +27,21 @@ class RecordPage extends StatefulWidget {
 }
 
 class _RecordPageState extends State<RecordPage> {
+  
   @override
   void initState() {
     super.initState();
     audioPlayer = AudioPlayer();
     audioRecord = Record();
+    _stopwatch = Stopwatch();
   }
 
   @override
   void dispose() {
     audioRecord.dispose();
     audioPlayer.dispose();
+    _stopwatch.stop();
+    _timer.cancel();
     super.dispose();
   }
 
@@ -44,6 +53,12 @@ class _RecordPageState extends State<RecordPage> {
           isRecording = true;
           isPlaying = false;
           audioPath = '';
+          _stopwatch.reset();
+    _stopwatch.start();
+
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {});
+    });
         });
       }
     } catch (e) {
@@ -77,6 +92,8 @@ class _RecordPageState extends State<RecordPage> {
       setState(() {
         isRecording = false;
         audioPath = path;
+       _stopwatch.stop();
+    _timer.cancel();
       });
       // await updateFileNames();
     } catch (e) {
@@ -129,25 +146,39 @@ class _RecordPageState extends State<RecordPage> {
       print('Error saving transcript to file: $e');
     }
   }
+  String _formattedTime(Duration duration) {
+    return '${duration.inHours}:${(duration.inMinutes % 60).toString().padLeft(2, '0')}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Record'),
-      ),
+      //appBar: AppBar(
+       
+      //),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          //crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+            //widthFactor: 0.8, // Säädä tarpeen mukaan
+            child:
             Lottie.asset(
-              'assets/img/lottie/hexSpinner.json', // Polku Lottie-tiedostoon
-              width: 50,
-              height: 50,
+              'assets/img/lottie/hexSpinnerLogo.json', // Polku Lottie-tiedostoon
+              width: 90,
+              height: 90,
               fit: BoxFit.cover,
             ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
+            ),
+           if(isRecording) Text(
+              '${_formattedTime(_stopwatch.elapsed)}',
+              style: TextStyle(fontSize: 40.0),
+            ),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.black,
                 shadowColor: Colors.blueAccent,
                 elevation: 10,
