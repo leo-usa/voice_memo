@@ -10,8 +10,10 @@ class FileItem {
   final String folderName;
   final String originalText;
   final String originalTextPath;
-  // final String cleanedText;
-  // final String summaryText;
+  final String cleanedText;
+  final String cleanedTextPath;
+  final String summaryText;
+  final String summaryTextPath;
   final String audioPath;
 
   FileItem({
@@ -21,8 +23,10 @@ class FileItem {
     required this.folderName,
     required this.originalText,
     required this.originalTextPath,
-    // required this.cleanedText,
-    // required this.summaryText,
+    required this.cleanedText,
+    required this.cleanedTextPath,
+    required this.summaryText,
+    required this.summaryTextPath,
     required this.audioPath,
   });
 }
@@ -59,6 +63,8 @@ Future<void> updateFileNames() async {
 
     bool isAudio = filename.contains("Audio");
     bool isOriginalText = filename.contains("Original");
+    bool isCleanedText = filename.contains("Cleaned");
+    bool isSummaryText = filename.contains("Summary");
     bool isTitle = filename.contains("Title");
 
     if (isAudio) {
@@ -69,6 +75,16 @@ Future<void> updateFileNames() async {
       print("$path text: $data");
       timestampToData[timestamp]!["original_text"] = data;
       timestampToData[timestamp]!["original_text_path"] = path;
+    } else if (isCleanedText) {
+      String data = File(path).readAsStringSync();
+      print("$path text: $data");
+      timestampToData[timestamp]!["cleaned_text"] = data;
+      timestampToData[timestamp]!["cleaned_text_path"] = path;
+    } else if (isSummaryText) {
+      String data = File(path).readAsStringSync();
+      print("$path text: $data");
+      timestampToData[timestamp]!["summary_text"] = data;
+      timestampToData[timestamp]!["summary_text_path"] = path;
     } else if (isTitle) {
       String data = File(path).readAsStringSync();
       timestampToData[timestamp]!["title"] = data;
@@ -92,6 +108,16 @@ Future<void> updateFileNames() async {
     String originalTextPath = data.containsKey("original_text_path")
         ? data["original_text_path"]
         : "";
+    String cleanedText = data.containsKey("cleaned_text")
+        ? data["cleaned_text"]
+        : "Missing transcription!";
+    String cleanedTextPath =
+        data.containsKey("cleaned_text_path") ? data["cleaned_text_path"] : "";
+    String summaryText = data.containsKey("summary_text")
+        ? data["summary_text"]
+        : "Missing transcription!";
+    String summaryTextPath =
+        data.containsKey("summary_text_path") ? data["summary_text_path"] : "";
 
     int year = int.parse(timestamp.substring(0, 4));
     int month = int.parse(timestamp.substring(4, 6));
@@ -108,77 +134,15 @@ Future<void> updateFileNames() async {
       folderName: "root",
       originalText: originalText,
       originalTextPath: originalTextPath,
+      cleanedText: cleanedText,
+      cleanedTextPath: cleanedTextPath,
+      summaryText: summaryText,
+      summaryTextPath: summaryTextPath,
       audioPath: audioPath,
     );
     filenames.insert(0, fileItem);
   }
 }
-
-// final List<FileItem> filenames = <FileItem>[
-//   FileItem(
-//     name: 'Sales Presentation Meeting',
-//     date: '23.10.2023',
-//     folderName: 'Meeting notes',
-//     // originalText: 'Original text for',
-//     // cleanedText: 'Cleaned text for',
-//     // summaryText: 'Summary text for',
-//     // audio: 'Audio for'
-//   ),
-//   FileItem(
-//     name: 'Project Kickoff',
-//     date: '15.10.2023',
-//     folderName: 'Meeting notes',
-//     // originalText: 'Original text for',
-//     // cleanedText: 'Cleaned text for',
-//     // summaryText: 'Summary text for',
-//     // audio: 'Audio for'
-//   ),
-//   FileItem(
-//     name: 'Weekly Newsletter',
-//     date: '4.10.2023',
-//     folderName: 'Email drafts',
-//     // originalText: 'Original text for',
-//     // cleanedText: 'Cleaned text for',
-//     // summaryText: 'Summary text for',
-//     // audio: 'Audio for'
-//   ),
-//   FileItem(
-//     name: 'Design Inspiration',
-//     date: '4.10.2023',
-//     folderName: 'Ideas',
-//     // originalText: 'Original text for',
-//     // cleanedText: 'Cleaned text for',
-//     // summaryText: 'Summary text for',
-//     // audio: 'Audio for'
-//   ),
-//   FileItem(
-//     name: 'Creative Marketing Strategies',
-//     date: '1.10.2023',
-//     folderName: 'Ideas',
-//     // originalText: 'Original text for',
-//     // cleanedText: 'Cleaned text for',
-//     // summaryText: 'Summary text for',
-//     // audio: 'Audio for'
-//   ),
-//   FileItem(
-//     name: 'New Product Ideas',
-//     date: '27.9.2023',
-//     folderName: 'Ideas',
-//     // originalText: 'Original text for',
-//     // cleanedText: 'Cleaned text for',
-//     // summaryText: 'Summary text for',
-//     // audio: 'Audio for'
-//   ),
-//   FileItem(
-//     name: 'Client Meeting Notes',
-//     date: '25.9.2023',
-//     folderName: 'Meeting notes',
-//     // originalText: 'Original text for',
-//     // cleanedText: 'Cleaned text for',
-//     // summaryText: 'Summary text for',
-//     // audio: 'Audio for'
-//   ),
-// ];
 
 final List<String> foldernames = <String>[
   'Meeting notes',
@@ -351,6 +315,10 @@ class FileUtilities {
             titlePath: fileItem.titlePath,
             originalText: fileItem.originalText,
             originalTextPath: fileItem.originalTextPath,
+            cleanedText: fileItem.cleanedText,
+            cleanedTextPath: fileItem.cleanedTextPath,
+            summaryText: fileItem.summaryText,
+            summaryTextPath: fileItem.summaryTextPath,
             audioPath: fileItem.audioPath,
             updateList: updateList),
       ),

@@ -1,20 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'dart:io';
 
+// ignore: must_be_immutable
 class OpenedFilePage extends StatefulWidget {
-  final String title;
+  String title;
   final String titlePath;
   final String originalText;
   final String originalTextPath;
+  String cleanedText;
+  final String cleanedTextPath;
+  final String summaryText;
+  final String summaryTextPath;
   final String audioPath;
   final Function updateList;
 
-  const OpenedFilePage(
+  OpenedFilePage(
       {Key? key,
       required this.title,
       required this.titlePath,
       required this.originalText,
       required this.originalTextPath,
+      required this.cleanedText,
+      required this.cleanedTextPath,
+      required this.summaryText,
+      required this.summaryTextPath,
       required this.audioPath,
       required this.updateList})
       : super(key: key);
@@ -26,6 +36,11 @@ class OpenedFilePage extends StatefulWidget {
 class _OpenedFilePageState extends State<OpenedFilePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  AudioPlayer audioPlayer = AudioPlayer();
+  bool isPlaying = false;
+  Duration totalDuration = Duration();
+  Duration currentPosition = Duration();
+  late Widget cleanedText; // Muuta tämä Widget-tyypiksi
 
   @override
   void initState() {
@@ -34,19 +49,97 @@ class _OpenedFilePageState extends State<OpenedFilePage>
       length: 4, // Määrä vaihtoehtoja: Original, Cleaned, Summary, Audio
       vsync: this,
     );
+    audioPlayer.onDurationChanged.listen((Duration d) {
+      setState(() => totalDuration = d);
+    });
+    audioPlayer.onPositionChanged.listen((Duration p) {
+      setState(() => currentPosition = p);
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    audioPlayer.dispose();
     super.dispose();
   }
 
-  Future<void> deleteFiles(BuildContext context, String titlePath,
-      String originalTextPath, String audioPath, Function updateList) async {
+  RichText addParagraphBreaksAndBoldTitles(String text, BuildContext context) {
+    List<TextSpan> spans = [];
+
+    // Etsitään otsikot, listakohteet ja muu teksti
+    var regex = RegExp(r'##\s*(.*?)\r?\n|\*\s*(.*?)\r?\n|([^#\*]+)');
+    var matches = regex.allMatches(text);
+
+    // Haetaan teematiedot contextista
+    var theme = Theme.of(context);
+    var defaultTextStyle = theme.textTheme.bodyLarge; // Vaihda tarvittaessa
+    var headerTextStyle = theme.textTheme.titleMedium
+        ?.copyWith(fontWeight: FontWeight.bold); // Otsikoiden tyyli
+    var listItemStyle = theme.textTheme.bodyLarge; // Lista-kohtien tyyli
+
+    for (var match in matches) {
+      if (match.group(1) != null) {
+        // Lisätään boldattu otsikko
+        spans.add(TextSpan(
+          text: match.group(1)!.trim() + '\n',
+          style: headerTextStyle,
+        ));
+      } else if (match.group(2) != null) {
+        // Lisätään lista-kohta
+        spans.add(TextSpan(
+          text: "• " + match.group(2)!.trim() + '\n',
+          style: listItemStyle,
+        ));
+      } else if (match.group(3) != null) {
+        // Lisätään normaali teksti
+        spans.add(TextSpan(
+          text: match.group(3)!.replaceAll("||", "\n"),
+          style: defaultTextStyle,
+        ));
+      }
+    }
+
+    // Palautetaan RichText, joka sisältää kaikki TextSpan-oliot
+    return RichText(
+      text: TextSpan(
+        children: spans,
+        style: defaultTextStyle,
+      ),
+    );
+  }
+
+  void toggleAudio() async {
+    if (isPlaying) {
+      await audioPlayer.pause();
+    } else {
+      await audioPlayer.play(UrlSource(widget.audioPath));
+    }
+    setState(() {
+      isPlaying = !isPlaying;
+    });
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "${duration.inHours > 0 ? '${twoDigits(duration.inHours)}:' : ''}$twoDigitMinutes:$twoDigitSeconds";
+  }
+
+  Future<void> deleteFiles(
+      BuildContext context,
+      String titlePath,
+      String originalTextPath,
+      String cleanedTextPath,
+      String summaryTextPath,
+      String audioPath,
+      Function updateList) async {
     List<String> filePaths = [
       titlePath,
       originalTextPath,
+      cleanedTextPath,
+      summaryTextPath,
       audioPath,
     ];
 
@@ -64,14 +157,25 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     Navigator.of(context).pop();
   }
 
-  void showDeleteConfirmationDialog(BuildContext context, String titlePath,
-      String originalTextPath, String audioPath, Function updateList) {
+  Future<void> rewriteFileContents(String filePath, String newContents) async {
+    File file = File(filePath);
+    await file.writeAsString(newContents);
+  }
+
+  void showDeleteConfirmationDialog(
+      BuildContext context,
+      String titlePath,
+      String originalTextPath,
+      String cleanedTextPath,
+      String summaryTextPath,
+      String audioPath,
+      Function updateList) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Files'),
-          content: Text('Are you sure you want to delete these files?'),
+          title: Text('Delete File'),
+          content: Text('Are you sure you want to delete this file?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -81,9 +185,14 @@ class _OpenedFilePageState extends State<OpenedFilePage>
             ),
             TextButton(
               onPressed: () async {
-                await deleteFiles(context, titlePath, originalTextPath,
-                    audioPath, updateList); // Poista tiedostot
-                widget.updateList();
+                await deleteFiles(
+                    context,
+                    titlePath,
+                    originalTextPath,
+                    cleanedTextPath,
+                    summaryTextPath,
+                    audioPath,
+                    updateList); // Poista tiedostot
                 Navigator.of(context).pop();
               },
               child: Text('Yes'),
@@ -94,8 +203,49 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     );
   }
 
+  void showRenameDialog(
+      BuildContext context, OpenedFilePage widget, String titlePath) {
+    TextEditingController textEditingController =
+        TextEditingController(text: widget.title);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Rename File'),
+          content: TextField(
+            controller: textEditingController,
+            decoration: InputDecoration(hintText: 'Enter new file name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                String newName = textEditingController.text;
+                if (newName.isNotEmpty) {
+                  await rewriteFileContents(titlePath, newName);
+                  widget.title = newName;
+                  await widget.updateList();
+                  setState(() {});
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Text('Rename'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    Widget formattedCleanedText =
+        addParagraphBreaksAndBoldTitles(widget.cleanedText, context);
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(120.0),
@@ -104,17 +254,15 @@ class _OpenedFilePageState extends State<OpenedFilePage>
           actions: [
             PopupMenuButton(
               onSelected: (value) {
-                if (value == 'copy') {
-                  // Tässä voit toteuttaa tiedoston kopioinnin
-                } else if (value == 'share') {
-                  // Tässä voit toteuttaa tiedoston jakamisen
-                } else if (value == 'moveFile') {
-                  // Tässä voit toteuttaa tiedoston siirron
+                if (value == 'renameFile') {
+                  showRenameDialog(context, widget, widget.titlePath);
                 } else if (value == 'delete') {
                   showDeleteConfirmationDialog(
                       context,
                       widget.titlePath,
                       widget.originalTextPath,
+                      widget.cleanedTextPath,
+                      widget.summaryTextPath,
                       widget.audioPath,
                       widget.updateList);
                 }
@@ -125,35 +273,13 @@ class _OpenedFilePageState extends State<OpenedFilePage>
               itemBuilder: (context) {
                 return [
                   const PopupMenuItem(
-                    value: 'copy',
+                    value: 'renameFile',
                     child: Row(
                       children: <Widget>[
-                        Icon(Icons.copy), // Kuvake tässä
+                        Icon(Icons.edit_outlined), // Kuvake tässä
                         SizedBox(
                             width: 8.0), // Pieni väli ikonin ja tekstin välillä
-                        Text('Copy text'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'share',
-                    child: Row(
-                      children: <Widget>[
-                        Icon(Icons.share), // Kuvake tässä
-                        SizedBox(
-                            width: 8.0), // Pieni väli ikonin ja tekstin välillä
-                        Text('Share text'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'moveFile',
-                    child: Row(
-                      children: <Widget>[
-                        Icon(Icons.drive_file_move_outline), // Kuvake tässä
-                        SizedBox(
-                            width: 8.0), // Pieni väli ikonin ja tekstin välillä
-                        Text('Move file'),
+                        Text('Rename file'),
                       ],
                     ),
                   ),
@@ -195,11 +321,11 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${widget.originalText}',
-                    style: const TextStyle(
-                      height: 1.5,
-                      fontSize: 16.0,
-                    ),
+                    widget.originalText,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          height: 1.5,
+                          fontSize: 16.0,
+                        ),
                   ),
                   // Muuta sisältöä tarpeidesi mukaan...
                 ],
@@ -212,14 +338,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Cleaned content for ${widget.title}',
-                    style: const TextStyle(
-                      height: 1.5,
-                      fontSize: 16.0,
-                    ),
-                  ),
-                  // Muuta sisältöä tarpeidesi mukaan...
+                  formattedCleanedText, // Käytä muotoiltua tekstiä täällä
                 ],
               ),
             ),
@@ -231,27 +350,120 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Summary content for ${widget.title}',
-                    style: const TextStyle(
-                      height: 1.5,
-                      fontSize: 16.0,
-                    ),
+                    widget.summaryText,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          height: 1.5,
+                          fontSize: 16.0,
+                        ),
                   ),
                   // Muuta sisältöä tarpeidesi mukaan...
                 ],
               ),
             ),
           ),
-          Center(child: Text('Audio content for ${widget.audioPath}')),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize
+                  .min, // Asettaa Columnin kokoa sen sisällön mukaan
+              children: [
+                const Text(
+                  'Listen the original audio of',
+                  style: TextStyle(
+                    height: 1.5,
+                    fontSize: 14.0,
+                  ),
+                ),
+                Text(
+                  '${widget.title}',
+                  style: const TextStyle(
+                    height: 1.5,
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(
+                      vertical: 20.0), // Lisää vertikaalista paddingia
+                ),
+                Material(
+                  elevation: 5.0, // Varjostus
+                  shape: CircleBorder(), // Pyöreä muoto
+                  color: Theme.of(context).colorScheme.primary,
+                  child: IconButton(
+                    icon: Icon(
+                      isPlaying ? Icons.pause : Icons.play_arrow,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onPrimary, // Kuvakkeen väri
+                    ),
+                    iconSize: 40.0, // Kuvakkeen koko
+                    onPressed: toggleAudio,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(
+                      vertical: 5.0), // Lisää vertikaalista paddingia
+                ),
+                Column(
+                  children: [
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: Theme.of(context)
+                            .colorScheme
+                            .primary, // aktiivisen radan väri
+                        inactiveTrackColor: Theme.of(context)
+                            .colorScheme
+                            .onBackground, // inaktiivisen radan väri
+                        thumbColor: Theme.of(context)
+                            .colorScheme
+                            .primary, // liukurin väri
+                        overlayColor: Colors.cyan.withAlpha(
+                            32), // liukurin ympärillä näkyvän efektin väri
+                        trackHeight: 4.0, // radan korkeus
+                      ),
+                      child: Slider(
+                        value: currentPosition.inSeconds.toDouble(),
+                        max: totalDuration.inSeconds.toDouble(),
+                        onChanged: (value) {
+                          audioPlayer.seek(Duration(seconds: value.toInt()));
+                        },
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              left: 25.0), // Säädä tätä arvoa tarpeen mukaan
+                          child: Text(
+                            _formatDuration(currentPosition),
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              right: 25.0), // Säädä tätä arvoa tarpeen mukaan
+                          child: Text(
+                            _formatDuration(totalDuration),
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Tiedoston muokkausnäkymän toiminnallisuuteen siirtyminen
-        },
-        shape: const CircleBorder(),
-        child: const Icon(Icons.edit),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {
+      //     // Tiedoston muokkausnäkymän toiminnallisuuteen siirtyminen
+      //   },
+      //   shape: const CircleBorder(),
+      //   child: const Icon(Icons.edit),
+      // ),
     );
   }
 }
