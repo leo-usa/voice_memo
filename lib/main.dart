@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Voice Memo'),
+      home: const MyHomePage(title: ''),
     );
   }
 }
@@ -118,9 +118,9 @@ class OnboardingApp extends StatelessWidget {
               width: MediaQuery.of(context).size.width,
               child: Lottie.asset(
                 'assets/img/lottie/hexSpinnerLogo.json', // Polku Lottie-tiedostoon
-                width: 90,
-                height: 90,
-                fit: BoxFit.cover,
+                width: 80,
+                height: 80,
+                fit: BoxFit.contain,
               ),
             ),
           ),
@@ -177,13 +177,17 @@ class ResetOnboardingButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return IconButton(
+      icon: Icon(
+        Icons.info,
+        color:
+            Theme.of(context).colorScheme.primary, // Käytä teeman primary-väriä
+      ),
       onPressed: () async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('completedOnboarding', false);
         runApp(const OnboardingApp());
       },
-      child: const Text("Reset Onboarding"),
     );
   }
 }

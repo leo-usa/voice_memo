@@ -9,18 +9,17 @@ import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
-
 late Record audioRecord;
 late AudioPlayer audioPlayer;
 bool isRecording = false;
 bool isPlaying = false;
+bool isLoading = false;
 String audioPath = '';
 String? transcript;
 late Timer _timer;
 late Stopwatch _stopwatch;
 String? cleanedText;
 String? summaryText;
-
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -29,7 +28,6 @@ class RecordPage extends StatefulWidget {
 }
 
 class _RecordPageState extends State<RecordPage> {
-  
   @override
   void initState() {
     super.initState();
@@ -56,11 +54,11 @@ class _RecordPageState extends State<RecordPage> {
           isPlaying = false;
           audioPath = '';
           _stopwatch.reset();
-    _stopwatch.start();
+          _stopwatch.start();
 
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {});
-    });
+          _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+            setState(() {});
+          });
         });
       }
     } catch (e) {
@@ -71,6 +69,14 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> stopRecording() async {
     try {
       String? path = await audioRecord.stop();
+      setState(() {
+        isRecording = false;
+        isLoading = true; // Aseta lataus käynnissä
+        _stopwatch.stop();
+        if (_timer.isActive) {
+          _timer.cancel();
+        }
+      });
       // Luo päivämäärä- ja aikaformaatti
       final formatter = DateFormat('yyyyMMdd_HHmmss');
       final formattedDate = formatter.format(DateTime.now());
@@ -97,14 +103,12 @@ class _RecordPageState extends State<RecordPage> {
       await saveTextToFile(cleanedText!, fileNameCleanedText);
       await saveTextToFile(summaryText!, fileNameSummaryText);
       await saveTextToFile(title, fileNameTitle);
-      setState(() {
-        isRecording = false;
-        audioPath = path;
-       _stopwatch.stop();
-    _timer.cancel();
-      });
 
       if (!mounted) return;
+
+      setState(() {
+        isLoading = false; // Lataus valmis
+      });
 
       // Tiedoston tallennuksen jälkeen näytä viesti
       ScaffoldMessenger.of(context).showSnackBar(
@@ -181,64 +185,107 @@ class _RecordPageState extends State<RecordPage> {
       print('Error saving transcript to file: $e');
     }
   }
+
   String _formattedTime(Duration duration) {
     return '${duration.inHours}:${(duration.inMinutes % 60).toString().padLeft(2, '0')}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //appBar: AppBar(
-       
-      //),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          //crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            SizedBox(
-              width: MediaQuery.of(context).size.width,
-            //widthFactor: 0.8, // Säädä tarpeen mukaan
-            child:
-            Lottie.asset(
-              'assets/img/lottie/hexSpinnerLogo.json', // Polku Lottie-tiedostoon
-              width: 90,
-              height: 90,
-              fit: BoxFit.cover,
-            ),
-            ),
-           if(isRecording) Text(
-              '${_formattedTime(_stopwatch.elapsed)}',
-              style: TextStyle(fontSize: 40.0),
-            ),
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                backgroundColor: Colors.black,
-                shadowColor: Colors.blueAccent,
-                elevation: 10,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100.0)),
-                minimumSize: const Size(170, 170), //////// HERE
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          if (!isLoading)
+            Container(
+              alignment: Alignment.topCenter,
+              height: MediaQuery.of(context).size.height * 0.22,
+              child: Lottie.asset(
+                'assets/img/lottie/hexSpinnerLogo.json',
+                width: 300,
+                height: 300,
+                fit: BoxFit.contain,
               ),
-              onPressed: isRecording ? stopRecording : startRecording,
-              icon: Align(
+            ),
+          if (!isLoading)
+            Expanded(
+              child: Stack(
                 alignment: Alignment.center,
-                child: Icon(
-                  isRecording ? Icons.stop : Icons.keyboard_voice_outlined,
-                  size: 80.0,
-                ),
+                children: [
+                  Positioned(
+                    top: 30,
+                    left: 0,
+                    right: 0,
+                    child: !isRecording
+                        ? Text(
+                            "Tap to start recording",
+                            style: Theme.of(context).textTheme.titleMedium,
+                            textAlign: TextAlign.center,
+                          )
+                        : SizedBox.shrink(),
+                  ),
+                  if (isRecording)
+                    Positioned(
+                      top: 30,
+                      child: Text(
+                        '${_formattedTime(_stopwatch.elapsed)}',
+                        style: Theme.of(context).textTheme.titleLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  Positioned(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).colorScheme.primary,
+                            blurRadius: 10.0,
+                            spreadRadius: 0.0,
+                          ),
+                        ],
+                      ),
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.surface,
+                          side: BorderSide(
+                              color: Theme.of(context).colorScheme.primary),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100.0)),
+                          minimumSize: const Size(170, 170),
+                        ),
+                        onPressed: isRecording ? stopRecording : startRecording,
+                        child: Icon(
+                          isRecording
+                              ? Icons.stop
+                              : Icons.keyboard_voice_outlined,
+                          size: 70.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              label: Text(''),
             ),
-            const SizedBox(height: 25),
-            if (audioPath.isNotEmpty)
-              ElevatedButton(
-                onPressed: isPlaying ? stopPlaying : playRecording,
-                child: Text(isPlaying ? 'Stop' : 'Play'),
+          if (isLoading)
+            Align(
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  Text(
+                    "Please wait a sec...\nI'm writing your memo",
+                    style: Theme.of(context).textTheme.titleLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-          ],
-        ),
+            ),
+          const SizedBox(height: 50),
+        ],
       ),
     );
   }
