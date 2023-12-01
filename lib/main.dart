@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'files.dart';
 import 'record.dart';
 import 'settings.dart';
+import 'package:lottie/lottie.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -113,9 +114,14 @@ class OnboardingApp extends StatelessWidget {
             title: "Welcome to Voice Memo",
             body:
                 "We're excited to have you on board! Our app is designed to make your professional life easier by transforming spoken words into text using the power of AI. Whether you're recording meetings, interviews, or any other conversations, we've got you covered.",
-            image: Image.asset(
-              "assets/img/logo_still.png",
-              height: 70.0,
+            image: SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: Lottie.asset(
+                'assets/img/lottie/hexSpinnerLogo.json', // Polku Lottie-tiedostoon
+                width: 90,
+                height: 90,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           PageViewModel(
