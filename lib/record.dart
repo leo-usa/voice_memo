@@ -27,6 +27,7 @@ class RecordPage extends StatefulWidget {
   _RecordPageState createState() => _RecordPageState();
 }
 
+// Initialize audio recording, playback, and timer
 class _RecordPageState extends State<RecordPage> {
   @override
   void initState() {
@@ -35,7 +36,7 @@ class _RecordPageState extends State<RecordPage> {
     audioRecord = Record();
     _stopwatch = Stopwatch();
   }
-
+// Release resources when the state is disposed
   @override
   void dispose() {
     audioRecord.dispose();
@@ -44,7 +45,7 @@ class _RecordPageState extends State<RecordPage> {
     _timer.cancel();
     super.dispose();
   }
-
+// Audio recording start
   Future<void> startRecording() async {
     try {
       if (await audioRecord.hasPermission()) {
@@ -55,7 +56,7 @@ class _RecordPageState extends State<RecordPage> {
           audioPath = '';
           _stopwatch.reset();
           _stopwatch.start();
-
+          // Start the timer to update the recording duration
           _timer = Timer.periodic(Duration(seconds: 1), (timer) {
             setState(() {});
           });
@@ -65,23 +66,23 @@ class _RecordPageState extends State<RecordPage> {
       print('Error starting recording: $e');
     }
   }
-
+// Audio recording stop
   Future<void> stopRecording() async {
     try {
       String? path = await audioRecord.stop();
       setState(() {
         isRecording = false;
-        isLoading = true; // Aseta lataus käynnissä
+        isLoading = true; // Set loading in progress
         _stopwatch.stop();
         if (_timer.isActive) {
           _timer.cancel();
         }
       });
-      // Luo päivämäärä- ja aikaformaatti
+      // Create date and time format
       final formatter = DateFormat('yyyyMMdd_HHmmss');
       final formattedDate = formatter.format(DateTime.now());
 
-      // Luo tiedostonimi yhdistämällä annettu nimi, päivämäärä ja aika
+      // Create file names with adding time stamp
       final fileNameOriginalText = 'recording_Original_$formattedDate.txt';
       final fileNameCleanedText = 'recording_Cleaned_$formattedDate.txt';
       final fileNameSummaryText = 'recording_Summary_$formattedDate.txt';
@@ -98,6 +99,8 @@ class _RecordPageState extends State<RecordPage> {
       transcript = req;
       cleanedText = clean;
       summaryText = sum;
+
+      // Do functions to save files
       await saveAudioToFile(path, fileNameAudio);
       await saveTextToFile(transcript!, fileNameOriginalText);
       await saveTextToFile(cleanedText!, fileNameCleanedText);
@@ -107,10 +110,10 @@ class _RecordPageState extends State<RecordPage> {
       if (!mounted) return;
 
       setState(() {
-        isLoading = false; // Lataus valmis
+        isLoading = false; // Loading finished
       });
 
-      // Tiedoston tallennuksen jälkeen näytä viesti
+      // Show message after file is saved
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Align(
@@ -130,8 +133,8 @@ class _RecordPageState extends State<RecordPage> {
           ),
           margin: const EdgeInsets.only(
             bottom: 20.0,
-          ), // Työntää SnackBaria ylöspäin
-          behavior: SnackBarBehavior.floating, // Tehdään SnackBarista kelluva
+          ), 
+          behavior: SnackBarBehavior.floating, 
         ),
       );
       // await updateFileNames();
@@ -160,7 +163,7 @@ class _RecordPageState extends State<RecordPage> {
       print('Error stopping audio: $e');
     }
   }
-
+// Function to save audio
   Future<void> saveAudioToFile(String audioPath, String fileNameAudio) async {
     try {
       final appDocumentsDir = await getApplicationDocumentsDirectory();
@@ -171,7 +174,7 @@ class _RecordPageState extends State<RecordPage> {
       print('Error saving audio to file: $e');
     }
   }
-
+// Function to save text file
   Future<void> saveTextToFile(String text, String fileNameOriginalText) async {
     try {
       final appDocumentsDir = await getApplicationDocumentsDirectory();
