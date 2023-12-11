@@ -15,6 +15,7 @@ class OpenedFilePage extends StatefulWidget {
   final String audioPath;
   final Function updateList;
 
+// Constructor for OpenedFilePage
   OpenedFilePage(
       {Key? key,
       required this.title,
@@ -40,13 +41,14 @@ class _OpenedFilePageState extends State<OpenedFilePage>
   bool isPlaying = false;
   Duration totalDuration = Duration();
   Duration currentPosition = Duration();
-  late Widget cleanedText; // Muuta tämä Widget-tyypiksi
+  late Widget cleanedText; // Change this to Widget type
 
   @override
   void initState() {
     super.initState();
+    // Initialize TabController and AudioPlayer
     _tabController = TabController(
-      length: 4, // Määrä vaihtoehtoja: Original, Cleaned, Summary, Audio
+      length: 4, // Number of options: Original, Cleaned, Summary, Audio
       vsync: this,
     );
     audioPlayer.onDurationChanged.listen((Duration d) {
@@ -59,40 +61,41 @@ class _OpenedFilePageState extends State<OpenedFilePage>
 
   @override
   void dispose() {
+    // Dispose of resources when the state is disposed
     _tabController.dispose();
     audioPlayer.dispose();
     super.dispose();
   }
-
+// Function to add paragraph breaks and format titles in bold
   RichText addParagraphBreaksAndBoldTitles(String text, BuildContext context) {
     List<TextSpan> spans = [];
 
-    // Etsitään otsikot, listakohteet ja muu teksti
+    // Find titles, list items, and other text
     var regex = RegExp(r'##\s*(.*?)\r?\n|\*\s*(.*?)\r?\n|([^#\*]+)');
     var matches = regex.allMatches(text);
 
-    // Haetaan teematiedot contextista
+    // Get theme data from context
     var theme = Theme.of(context);
-    var defaultTextStyle = theme.textTheme.bodyLarge; // Vaihda tarvittaessa
+    var defaultTextStyle = theme.textTheme.bodyLarge; // Change if needed
     var headerTextStyle = theme.textTheme.titleMedium
-        ?.copyWith(fontWeight: FontWeight.bold); // Otsikoiden tyyli
-    var listItemStyle = theme.textTheme.bodyLarge; // Lista-kohtien tyyli
+        ?.copyWith(fontWeight: FontWeight.bold); // Style for titles
+    var listItemStyle = theme.textTheme.bodyLarge; // Style for list items
 
     for (var match in matches) {
       if (match.group(1) != null) {
-        // Lisätään boldattu otsikko
+        // Add bold title
         spans.add(TextSpan(
           text: match.group(1)!.trim() + '\n',
           style: headerTextStyle,
         ));
       } else if (match.group(2) != null) {
-        // Lisätään lista-kohta
+        // Add list item
         spans.add(TextSpan(
           text: "• " + match.group(2)!.trim() + '\n',
           style: listItemStyle,
         ));
       } else if (match.group(3) != null) {
-        // Lisätään normaali teksti
+        // Add normal text
         spans.add(TextSpan(
           text: match.group(3)!.replaceAll("||", "\n"),
           style: defaultTextStyle,
@@ -100,7 +103,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
       }
     }
 
-    // Palautetaan RichText, joka sisältää kaikki TextSpan-oliot
+    // Return RichText containing all TextSpan objects
     return RichText(
       text: TextSpan(
         children: spans,
@@ -109,6 +112,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     );
   }
 
+// Function to toggle audio playback
   void toggleAudio() async {
     if (isPlaying) {
       await audioPlayer.pause();
@@ -120,13 +124,14 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     });
   }
 
+// Function to format duration as a string
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
     return "${duration.inHours > 0 ? '${twoDigits(duration.inHours)}:' : ''}$twoDigitMinutes:$twoDigitSeconds";
   }
-
+// Function to delete files
   Future<void> deleteFiles(
       BuildContext context,
       String titlePath,
@@ -146,10 +151,10 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     for (String filePath in filePaths) {
       try {
         await File(filePath).delete();
-        // Tiedosto poistettiin onnistuneesti
+        // File deleted successfully
         print('File deleted successfully: $filePath');
       } catch (error) {
-        // Virhe tiedoston poistamisessa
+        // Error deleting file
         print('Error deleting file $filePath: $error');
       }
     }
@@ -157,11 +162,13 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     Navigator.of(context).pop();
   }
 
+// Function to rewrite file contents
   Future<void> rewriteFileContents(String filePath, String newContents) async {
     File file = File(filePath);
     await file.writeAsString(newContents);
   }
 
+// Function to show delete confirmation dialog
   void showDeleteConfirmationDialog(
       BuildContext context,
       String titlePath,
@@ -203,6 +210,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
     );
   }
 
+// Function to show rename dialog
   void showRenameDialog(
       BuildContext context, OpenedFilePage widget, String titlePath) {
     TextEditingController textEditingController =
@@ -313,7 +321,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Lisää tänne kunkin vaihtoehdon sisältö
+          // Content for each option
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: SingleChildScrollView(
@@ -327,7 +335,6 @@ class _OpenedFilePageState extends State<OpenedFilePage>
                           fontSize: 16.0,
                         ),
                   ),
-                  // Muuta sisältöä tarpeidesi mukaan...
                 ],
               ),
             ),
@@ -338,7 +345,7 @@ class _OpenedFilePageState extends State<OpenedFilePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  formattedCleanedText, // Käytä muotoiltua tekstiä täällä
+                  formattedCleanedText, 
                 ],
               ),
             ),
