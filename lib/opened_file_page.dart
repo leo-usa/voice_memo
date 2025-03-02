@@ -114,14 +114,37 @@ class _OpenedFilePageState extends State<OpenedFilePage>
 
 // Function to toggle audio playback
   void toggleAudio() async {
-    if (isPlaying) {
-      await audioPlayer.pause();
-    } else {
-      await audioPlayer.play(UrlSource(widget.audioPath));
+    try {
+      if (isPlaying) {
+        await audioPlayer.pause();
+      } else {
+        final file = File(widget.audioPath);
+        if (await file.exists()) {
+          await audioPlayer.setSourceDeviceFile(widget.audioPath);
+          await audioPlayer.resume();
+        } else {
+          throw Exception('Audio file not found');
+        }
+      }
+      setState(() {
+        isPlaying = !isPlaying;
+      });
+      
+      // Listen for playback completion
+      audioPlayer.onPlayerComplete.listen((event) {
+        setState(() {
+          isPlaying = false;
+        });
+      });
+    } catch (e) {
+      print('Error playing audio: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to play audio: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-    setState(() {
-      isPlaying = !isPlaying;
-    });
   }
 
 // Function to format duration as a string

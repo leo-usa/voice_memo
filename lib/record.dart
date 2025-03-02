@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:voice_memo/API/whisper_api.dart';
+import 'package:voice_memo/API/api_key.dart';
 import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
@@ -35,6 +36,22 @@ class _RecordPageState extends State<RecordPage> {
     audioPlayer = AudioPlayer();
     audioRecord = Record();
     _stopwatch = Stopwatch();
+    
+    // Configure audio player
+    audioPlayer.setReleaseMode(ReleaseMode.stop);
+    
+    // Set up audio player listeners
+    audioPlayer.onPlayerStateChanged.listen((PlayerState state) {
+      print("Player state changed: $state");
+    });
+    
+    audioPlayer.onDurationChanged.listen((Duration d) {
+      print("Duration changed: $d");
+    });
+    
+    audioPlayer.onPositionChanged.listen((Duration p) {
+      print("Position changed: $p");
+    });
   }
 // Release resources when the state is disposed
   @override
@@ -49,14 +66,30 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> startRecording() async {
     try {
       if (await audioRecord.hasPermission()) {
-        await audioRecord.start();
+        // Get the documents directory
+        final appDocDir = await getApplicationDocumentsDirectory();
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        
+        // Create proper file paths
+        audioPath = '${appDocDir.path}/temp_recording_$timestamp.m4a';
+        
+        // Create a proper file URL for macOS using file:// format
+        final fileUrl = 'file://${Uri.file(audioPath).toFilePath(windows: false)}';
+        print('Starting recording to: $fileUrl'); // Debug log
+        
+        // Start recording with specified path
+        await audioRecord.start(
+          path: fileUrl,
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          samplingRate: 44100,
+        );
+        
         setState(() {
           isRecording = true;
           isPlaying = false;
-          audioPath = '';
           _stopwatch.reset();
           _stopwatch.start();
-          // Start the timer to update the recording duration
           _timer = Timer.periodic(Duration(seconds: 1), (timer) {
             setState(() {});
           });
@@ -64,80 +97,135 @@ class _RecordPageState extends State<RecordPage> {
       }
     } catch (e) {
       print('Error starting recording: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to start recording: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 // Audio recording stop
   Future<void> stopRecording() async {
     try {
       String? path = await audioRecord.stop();
-      setState(() {
-        isRecording = false;
-        isLoading = true; // Set loading in progress
-        _stopwatch.stop();
-        if (_timer.isActive) {
-          _timer.cancel();
+      print('Recording stopped, path: $path'); // Debug log
+      
+      // Verify file exists and has content
+      if (path != null) {
+        // Convert URL back to file path if needed
+        String filePath = Uri.parse(path).toFilePath();
+        print('Using file path: $filePath'); // Debug log
+        
+        File recordingFile = File(filePath);
+        if (await recordingFile.exists()) {
+          int fileSize = await recordingFile.length();
+          print('Recording file size: $fileSize bytes'); // Debug log
+          
+          if (fileSize > 0) {
+            setState(() {
+              isRecording = false;
+              isLoading = true;
+              _stopwatch.stop();
+              if (_timer.isActive) {
+                _timer.cancel();
+              }
+            });
+
+            // Check if API key is configured
+            if (apiKey.isEmpty || apiKey == 'your-openai-api-key') {
+              print('Error: OpenAI API key not configured');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Please configure your OpenAI API key'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+            
+            // Make API calls with better error handling
+            try {
+              var req = await requestWhisper(filePath, null);  // Use filePath instead of path
+              print('Whisper response: $req'); // Debug log
+              
+              var sum = await requestSummary(req);
+              print('Summary response: $sum'); // Debug log
+              
+              var clean = await requestClean(req);
+              print('Clean response: $clean'); // Debug log
+              
+              transcript = req;
+              cleanedText = clean;
+              summaryText = sum;
+
+              // Create date and time format
+              final formatter = DateFormat('yyyyMMdd_HHmmss');
+              final formattedDate = formatter.format(DateTime.now());
+
+              // Create file names with adding time stamp
+              final fileNameOriginalText = 'recording_Original_$formattedDate.txt';
+              final fileNameCleanedText = 'recording_Cleaned_$formattedDate.txt';
+              final fileNameSummaryText = 'recording_Summary_$formattedDate.txt';
+              final fileNameAudio = 'recording_Audio_$formattedDate.m4a';  // Added .m4a extension
+              final fileNameTitle = 'recording_Title_$formattedDate';
+
+              final title = 'Memo $formattedDate';
+
+              // Do functions to save files
+              await saveAudioToFile(filePath, fileNameAudio);  // Use filePath instead of path
+              await saveTextToFile(transcript!, fileNameOriginalText);
+              await saveTextToFile(cleanedText!, fileNameCleanedText);
+              await saveTextToFile(summaryText!, fileNameSummaryText);
+              await saveTextToFile(title, fileNameTitle);
+
+              if (!mounted) return;
+
+              setState(() {
+                isLoading = false; // Loading finished
+              });
+
+              // Show message after file is saved
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      'File saved succesfully!',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSecondaryContainer,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                  duration: const Duration(seconds: 3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: const EdgeInsets.only(
+                    bottom: 20.0,
+                  ), 
+                  behavior: SnackBarBehavior.floating, 
+                ),
+              );
+              // await updateFileNames();
+            } catch (e) {
+              print('API error: $e');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error processing recording: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          } else {
+            print('Recording file is empty');
+          }
+        } else {
+          print('Recording file does not exist');
         }
-      });
-      // Create date and time format
-      final formatter = DateFormat('yyyyMMdd_HHmmss');
-      final formattedDate = formatter.format(DateTime.now());
-
-      // Create file names with adding time stamp
-      final fileNameOriginalText = 'recording_Original_$formattedDate.txt';
-      final fileNameCleanedText = 'recording_Cleaned_$formattedDate.txt';
-      final fileNameSummaryText = 'recording_Summary_$formattedDate.txt';
-      final fileNameAudio = 'recording_Audio_$formattedDate';
-      final fileNameTitle = 'recording_Title_$formattedDate';
-
-      final title = 'Memo $formattedDate';
-
-      print(path);
-
-      var req = await requestWhisper(path!, null);
-      var sum = await requestSummary(req);
-      var clean = await requestClean(req);
-      transcript = req;
-      cleanedText = clean;
-      summaryText = sum;
-
-      // Do functions to save files
-      await saveAudioToFile(path, fileNameAudio);
-      await saveTextToFile(transcript!, fileNameOriginalText);
-      await saveTextToFile(cleanedText!, fileNameCleanedText);
-      await saveTextToFile(summaryText!, fileNameSummaryText);
-      await saveTextToFile(title, fileNameTitle);
-
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false; // Loading finished
-      });
-
-      // Show message after file is saved
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Align(
-            alignment: Alignment.center,
-            child: Text(
-              'File saved succesfully!',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSecondaryContainer,
-                fontSize: 16,
-              ),
-            ),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-          duration: const Duration(seconds: 3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.only(
-            bottom: 20.0,
-          ), 
-          behavior: SnackBarBehavior.floating, 
-        ),
-      );
-      // await updateFileNames();
+      }
     } catch (e) {
       print('Error stopping recording: $e');
     }
@@ -145,17 +233,43 @@ class _RecordPageState extends State<RecordPage> {
 
   Future<void> playRecording() async {
     try {
-      Source urlSource = UrlSource(audioPath);
-      await audioPlayer.play(urlSource);
-      print("AUDIO PATH: $audioPath");
+      // Create proper file URL for playback
+      final file = File(audioPath);
+      if (await file.exists()) {
+        final fileUrl = 'file://${Uri.file(audioPath).toFilePath(windows: false)}';
+        print("Playing audio from: $fileUrl");
+        
+        // Set up audio player
+        await audioPlayer.setSourceDeviceFile(audioPath);  // Use setSourceDeviceFile instead of setSourceUrl
+        await audioPlayer.resume();
+        
+        setState(() {
+          isPlaying = true;
+        });
+        
+        // Listen for playback completion
+        audioPlayer.onPlayerComplete.listen((event) {
+          setState(() {
+            isPlaying = false;
+          });
+        });
+      } else {
+        throw Exception('Audio file not found');
+      }
     } catch (e) {
-      print('Error playing audio : $e');
+      print('Error playing audio: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to play audio: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   Future<void> stopPlaying() async {
     try {
-      await audioPlayer.stop();
+      await audioPlayer.pause();
       setState(() {
         isPlaying = false;
       });
@@ -168,10 +282,31 @@ class _RecordPageState extends State<RecordPage> {
     try {
       final appDocumentsDir = await getApplicationDocumentsDirectory();
       final destinationPath = '${appDocumentsDir.path}/$fileNameAudio';
-      await File(audioPath).copy(destinationPath);
-      print('Audio saved to: $destinationPath');
+      
+      // Verify source file exists
+      final sourceFile = File(audioPath);
+      if (await sourceFile.exists()) {
+        await sourceFile.copy(destinationPath);
+        print('Audio saved to: $destinationPath');
+        
+        // Verify the copy worked
+        final destFile = File(destinationPath);
+        if (await destFile.exists()) {
+          final sourceSize = await sourceFile.length();
+          final destSize = await destFile.length();
+          print('Verified saved file: source size = $sourceSize bytes, destination size = $destSize bytes');
+          
+          // Delete the temporary file after successful copy
+          await sourceFile.delete();
+          print('Deleted temporary file: $audioPath');
+        }
+      } else {
+        print('Source audio file does not exist: $audioPath');
+        throw Exception('Source audio file not found');
+      }
     } catch (e) {
       print('Error saving audio to file: $e');
+      throw e;  // Rethrow to handle in calling function
     }
   }
 // Function to save text file
