@@ -9,6 +9,7 @@ import 'package:voice_memo/API/api_key.dart';
 import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
+import 'services/directory_service.dart';
 
 late Record audioRecord;
 late AudioPlayer audioPlayer;
@@ -144,9 +145,29 @@ class _RecordPageState extends State<RecordPage> {
               return;
             }
             
-            // Make API calls with better error handling
+            // Calculate recording length in minutes
+            int lengthInSeconds = _stopwatch.elapsed.inSeconds;
+            int lengthInMinutes = (lengthInSeconds / 60).ceil();
+            
+            // Create date and time format
+            final formatter = DateFormat('yyyyMMdd_HHmmss');
+            final formattedDate = formatter.format(DateTime.now());
+            
+            // Split date and time
+            final datePart = formattedDate.substring(0, 8);
+            final timePart = formattedDate.substring(9);
+
+            // Create file names with new format
+            final fileNameOriginalText = '${datePart}_${timePart}_${lengthInMinutes}min_original.txt';
+            final fileNameCleanedText = '${datePart}_${timePart}_${lengthInMinutes}min_cleaned.txt';
+            final fileNameSummaryText = '${datePart}_${timePart}_${lengthInMinutes}min_summary.txt';
+            final fileNameAudio = '${datePart}_${timePart}_${lengthInMinutes}min_audio.m4a';
+            final fileNameTitle = '${datePart}_${timePart}_${lengthInMinutes}min_title';
+
+            final title = 'Memo ${formattedDate} (${lengthInMinutes}min)';
+            
             try {
-              var req = await requestWhisper(filePath, null);  // Use filePath instead of path
+              var req = await requestWhisper(filePath, null);
               print('Whisper response: $req'); // Debug log
               
               var sum = await requestSummary(req);
@@ -159,21 +180,8 @@ class _RecordPageState extends State<RecordPage> {
               cleanedText = clean;
               summaryText = sum;
 
-              // Create date and time format
-              final formatter = DateFormat('yyyyMMdd_HHmmss');
-              final formattedDate = formatter.format(DateTime.now());
-
-              // Create file names with adding time stamp
-              final fileNameOriginalText = 'recording_Original_$formattedDate.txt';
-              final fileNameCleanedText = 'recording_Cleaned_$formattedDate.txt';
-              final fileNameSummaryText = 'recording_Summary_$formattedDate.txt';
-              final fileNameAudio = 'recording_Audio_$formattedDate.m4a';  // Added .m4a extension
-              final fileNameTitle = 'recording_Title_$formattedDate';
-
-              final title = 'Memo $formattedDate';
-
               // Do functions to save files
-              await saveAudioToFile(filePath, fileNameAudio);  // Use filePath instead of path
+              await saveAudioToFile(filePath, fileNameAudio);
               await saveTextToFile(transcript!, fileNameOriginalText);
               await saveTextToFile(cleanedText!, fileNameCleanedText);
               await saveTextToFile(summaryText!, fileNameSummaryText);
@@ -191,7 +199,7 @@ class _RecordPageState extends State<RecordPage> {
                   content: Align(
                     alignment: Alignment.center,
                     child: Text(
-                      'File saved succesfully!',
+                      'File saved successfully!',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSecondaryContainer,
                         fontSize: 16,
@@ -205,11 +213,10 @@ class _RecordPageState extends State<RecordPage> {
                   ),
                   margin: const EdgeInsets.only(
                     bottom: 20.0,
-                  ), 
-                  behavior: SnackBarBehavior.floating, 
+                  ),
+                  behavior: SnackBarBehavior.floating,
                 ),
               );
-              // await updateFileNames();
             } catch (e) {
               print('API error: $e');
               ScaffoldMessenger.of(context).showSnackBar(
@@ -280,8 +287,8 @@ class _RecordPageState extends State<RecordPage> {
 // Function to save audio
   Future<void> saveAudioToFile(String audioPath, String fileNameAudio) async {
     try {
-      final appDocumentsDir = await getApplicationDocumentsDirectory();
-      final destinationPath = '${appDocumentsDir.path}/$fileNameAudio';
+      final directory = await DirectoryService.getSaveDirectory();
+      final destinationPath = '$directory/$fileNameAudio';
       
       // Verify source file exists
       final sourceFile = File(audioPath);
@@ -306,21 +313,22 @@ class _RecordPageState extends State<RecordPage> {
       }
     } catch (e) {
       print('Error saving audio to file: $e');
-      throw e;  // Rethrow to handle in calling function
+      throw e;
     }
   }
 // Function to save text file
-  Future<void> saveTextToFile(String text, String fileNameOriginalText) async {
+  Future<void> saveTextToFile(String text, String fileName) async {
     try {
-      final appDocumentsDir = await getApplicationDocumentsDirectory();
-      final destinationPath = '${appDocumentsDir.path}/$fileNameOriginalText';
+      final directory = await DirectoryService.getSaveDirectory();
+      final destinationPath = '$directory/$fileName';
 
       final file = File(destinationPath);
       await file.writeAsString(text);
 
-      print('Transcript saved to: $destinationPath');
+      print('Text saved to: $destinationPath');
     } catch (e) {
-      print('Error saving transcript to file: $e');
+      print('Error saving text to file: $e');
+      throw e;
     }
   }
 

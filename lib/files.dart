@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'opened_file_page.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'services/directory_service.dart';
 
 class FileItem {
   final String name;
@@ -34,42 +35,44 @@ class FileItem {
 final List<FileItem> filenames = <FileItem>[];
 
 Future<void> updateFileNames() async {
-  final appDocumentsDir = await getApplicationDocumentsDirectory();
+  final directory = await DirectoryService.getSaveDirectory();
 
   filenames.clear();
 
   Map<String, Map<String, String>> timestampToData = {};
 
-  await for (var entity
-      in appDocumentsDir.list(recursive: true, followLinks: false)) {
+  final dir = Directory(directory);
+  await for (var entity in dir.list(recursive: true, followLinks: false)) {
     var path = entity.path;
 
     List<String> pathParts = path.split('/');
     String filename = pathParts.last;
 
-    bool isRecording = filename.contains("recording");
+    // Parse filename parts (date_time_lengthmin_type.*)
+    List<String> filenameParts = filename.split('_');
+    if (filenameParts.length < 4) continue; // Skip if filename doesn't match expected format
 
-    if (!isRecording) {
-      continue;
-    }
+    String datePart = filenameParts[0];
+    String timePart = filenameParts[1];
+    String lengthPart = filenameParts[2];
+    String typePart = filenameParts[3].split('.')[0]; // Remove extension
 
-    List<String> filenameParts = filename.split("_");
-    String timestamp = filenameParts.sublist(2).join("");
-    timestamp = timestamp.split(".")[0];
+    String timestamp = '${datePart}_$timePart';
 
     if (!timestampToData.containsKey(timestamp)) {
       timestampToData[timestamp] = {};
     }
 
-    bool isAudio = filename.contains("Audio");
-    bool isOriginalText = filename.contains("Original");
-    bool isCleanedText = filename.contains("Cleaned");
-    bool isSummaryText = filename.contains("Summary");
-    bool isTitle = filename.contains("Title");
+    bool isAudio = typePart == 'audio';
+    bool isOriginalText = typePart == 'original';
+    bool isCleanedText = typePart == 'cleaned';
+    bool isSummaryText = typePart == 'summary';
+    bool isTitle = typePart == 'title';
 
     if (isAudio) {
       String data = path;
       timestampToData[timestamp]!["audio_path"] = data;
+      timestampToData[timestamp]!["length"] = lengthPart;
     } else if (isOriginalText) {
       String data = File(path).readAsStringSync();
       print("$path text: $data");
@@ -119,13 +122,16 @@ Future<void> updateFileNames() async {
     String summaryTextPath =
         data.containsKey("summary_text_path") ? data["summary_text_path"] : "";
 
-    int year = int.parse(timestamp.substring(0, 4));
-    int month = int.parse(timestamp.substring(4, 6));
-    int day = int.parse(timestamp.substring(6, 8));
+    List<String> dateParts = timestamp.split('_');
+    String dateStr = dateParts[0];
+    
+    int year = int.parse(dateStr.substring(0, 4));
+    int month = int.parse(dateStr.substring(4, 6));
+    int day = int.parse(dateStr.substring(6, 8));
 
     print(originalText);
 
-    String timestampDate = "$day.$month.$year";
+    String timestampDate = "$year.$month.$day";
 
     FileItem fileItem = FileItem(
       name: title,
