@@ -5,3 +5,5 @@
 # Xcode-related
 **/dgph
 **/xcuserdata/
+
+lib/API/api_key.dart
